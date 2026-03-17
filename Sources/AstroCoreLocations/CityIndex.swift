@@ -22,16 +22,23 @@ public final class CityIndex: @unchecked Sendable {
         defer { lock.unlock() }
         guard !isLoaded else { return }
         loadCities()
-        isLoaded = true
+        // Only mark loaded if data was actually populated
+        isLoaded = !searchEntries.isEmpty
     }
 
     private func loadCities() {
         guard let url = Bundle.module.url(
             forResource: "cities", withExtension: "json"
-        ) else { return }
+        ) else {
+            print("[AstroCoreLocations] cities.json not found in bundle")
+            return
+        }
         guard let data = try? Data(contentsOf: url),
             let decoded = try? JSONDecoder().decode([CityRecord].self, from: data)
-        else { return }
+        else {
+            print("[AstroCoreLocations] Failed to decode cities.json")
+            return
+        }
         searchEntries = decoded.map { city in
             SearchEntry(
                 city: city,

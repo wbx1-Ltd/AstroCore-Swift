@@ -65,7 +65,8 @@ public struct CivilMoment: Sendable, Hashable, Codable {
             timeZoneIdentifier: timeZoneIdentifier,
             timeZone: timeZone
         )
-        let decimalYear = Double(year) + (Double(month) - 0.5) / 12.0
+        // Use UTC year/month for ΔT to ensure same instant → same result
+        let decimalYear = Double(utc.year) + (Double(utc.month) - 0.5) / 12.0
         let dayFraction =
             Double(utc.day) + Double(utc.hour) / 24.0 + Double(utc.minute) / 1440.0
             + Double(utc.second) / 86400.0
@@ -117,8 +118,8 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         self.cachedGreenwichApparentSiderealTime = greenwichApparentSiderealTime
     }
 
-    /// Decimal year for ΔT lookup, e.g. 2000.5 ≈ July 2000.
-    /// Uses Espenak & Meeus formula: y = year + (month - 0.5) / 12
+    /// Decimal year for ΔT lookup (based on UTC year/month).
+    /// Espenak & Meeus formula: y = utcYear + (utcMonth - 0.5) / 12
     public var decimalYear: Double {
         cachedDecimalYear
     }
@@ -147,16 +148,6 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         components.second = utcSecond
         components.timeZone = Self.utcTimeZone
         return components
-    }
-
-    /// Fractional day in UTC for Julian Day computation.
-    func utcFractionalComponents() throws(AstroError) -> (
-        year: Int, month: Int, dayFraction: Double
-    ) {
-        let dayFraction =
-            Double(utcDay) + Double(utcHour) / 24.0 + Double(utcMinute) / 1440.0
-            + Double(utcSecond) / 86400.0
-        return (utcYear, utcMonth, dayFraction)
     }
 
     public static func == (lhs: CivilMoment, rhs: CivilMoment) -> Bool {
