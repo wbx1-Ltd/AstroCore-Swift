@@ -3,7 +3,7 @@
 > **纯 Swift 实现的高精度西洋占星天文计算库，覆盖 1800–2100 年。**
 
 [![Swift 6.0](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue.svg)](https://github.com/babywbx/AstroCore-Swift)
+[![Platforms](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue.svg)](https://github.com/wbx1-Ltd/AstroCore-Swift)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [English](README.en.md)
@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/babywbx/AstroCore-Swift.git", from: "1.1.0"),
+    .package(url: "https://github.com/wbx1-Ltd/AstroCore-Swift.git", from: "1.1.0"),
 ]
 ```
 
@@ -277,4 +277,4 @@ print(sign.contains(longitude: 135.0))  // true
 
 ## 📄 许可
 
-[MIT License](LICENSE) © 2026 [Babywbx](https://github.com/babywbx)
+[MIT License](LICENSE) © 2026 [wbx1 Ltd.](https://github.com/wbx1-Ltd)
