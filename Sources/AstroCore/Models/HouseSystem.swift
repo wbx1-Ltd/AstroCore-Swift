@@ -37,9 +37,12 @@ public enum HouseSystem: String, CaseIterable, Sendable, Hashable, Codable {
 
 extension HouseSystem {
     /// True if the system is mathematically undefined above the polar circle (|φ| ≥ ~66.5°).
+    ///
+    /// Topocentric does not carry the limit: although it approximates Placidus,
+    /// its closed-form uses a scaled tan(φ) and stays well-defined up to |φ| < 90°.
     public var hasPolarLimit: Bool {
         switch self {
-        case .placidus, .koch, .alcabitius, .topocentric,
+        case .placidus, .koch, .alcabitius,
              .sunshineTreindl, .sunshineMakransky:
             true
         default:

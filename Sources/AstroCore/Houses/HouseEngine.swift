@@ -82,12 +82,18 @@ enum HouseEngine {
             RegiomontanusHouses.cusps(context: context)
         case .campanus:
             CampanusHouses.cusps(context: context)
+        case .alcabitius:
+            AlcabitiusHouses.cusps(context: context)
+        case .topocentric:
+            TopocentricHouses.cusps(context: context)
+        case .morinus:
+            MorinusHouses.cusps(context: context)
+        case .meridian:
+            MeridianHouses.cusps(context: context)
 
-        case .alcabitius,
-             .sunshineTreindl, .sunshineMakransky,
-             .morinus, .topocentric,
+        case .sunshineTreindl, .sunshineMakransky,
              .krusinski, .apc,
-             .horizontal, .meridian, .axialRotation, .carter,
+             .horizontal, .axialRotation, .carter,
              .pullenSD, .pullenSR:
             throw .houseSystemNotYetImplemented(system: system)
         }
