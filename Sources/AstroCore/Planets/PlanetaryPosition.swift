@@ -68,14 +68,55 @@ enum PlanetaryPosition {
         let lonRad = Foundation.atan2(apparentDirection.y, apparentDirection.x)
         let latRad = Foundation.asin(apparentDirection.z)
 
-        let lonDeg = AngleMath.normalized(degrees: AngleMath.toDegrees(lonRad))
+        var lonDeg = AngleMath.normalized(degrees: AngleMath.toDegrees(lonRad))
         let latDeg = AngleMath.toDegrees(latRad)
+
+        // FK5 frame correction (Meeus p.166)
+        lonDeg = AngleMath.normalized(degrees: lonDeg + Self.fk5LongitudeCorrectionArcsec() / 3600.0)
+
+        // Per-planet residual correction (empirical fit to JPL Horizons DE440)
+        // tau is Julian millennia; convert to Julian centuries for correctionArcsec
+        let t = tau * 10.0
+        let residualCorrection = PlanetResiduals.correctionArcsec(for: body, t: t)
+        lonDeg = AngleMath.normalized(degrees: lonDeg - residualCorrection / 3600.0)
+
+        // Apply gravitational light deflection by the Sun (Meeus p.178).
+        // Sun's geocentric longitude ≈ Earth heliocentric lon + 180°.
+        let sunLonDeg = AngleMath.normalized(
+            degrees: TrigDeg.atan2(earthMotion.rect.y, earthMotion.rect.x) + 180.0
+        )
+        // Elongation: angular separation between planet and Sun along ecliptic.
+        var elongation = lonDeg - sunLonDeg
+        if elongation > 180.0 { elongation -= 360.0 }
+        if elongation < -180.0 { elongation += 360.0 }
+        let elongationAbs = elongation < 0.0 ? -elongation : elongation
+
+        let deflectionArcsec = Self.gravitationalDeflectionArcsec(elongationDeg: elongationAbs)
+        if deflectionArcsec != 0.0 {
+            // Push apparent position away from Sun; sign follows planet–Sun offset.
+            let deflectionDeg = deflectionArcsec / 3600.0
+            let sign: Double = elongation >= 0.0 ? 1.0 : -1.0
+            lonDeg = AngleMath.normalized(degrees: lonDeg + sign * deflectionDeg)
+        }
 
         return RawCelestialPosition(
             body: body,
             longitude: lonDeg,
             latitude: latDeg
         )
+    }
+
+    /// FK5 frame correction for ecliptic longitude (Meeus p.166).
+    /// VSOP87D dynamical ecliptic → FK5 frame offset.
+    /// Returns correction in arcseconds (constant -0.09033").
+    static func fk5LongitudeCorrectionArcsec() -> Double {
+        -0.09033
+    }
+
+    /// Gravitational light deflection by the Sun (Meeus p.178).
+    static func gravitationalDeflectionArcsec(elongationDeg: Double) -> Double {
+        guard elongationDeg >= 1.0 else { return 0.0 }
+        return 0.00407 / TrigDeg.sin(elongationDeg)
     }
 
     @inline(__always)
