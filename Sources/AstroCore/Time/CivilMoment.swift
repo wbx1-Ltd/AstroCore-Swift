@@ -65,8 +65,15 @@ public struct CivilMoment: Sendable, Hashable, Codable {
             timeZoneIdentifier: timeZoneIdentifier,
             timeZone: timeZone
         )
-        // Use UTC year/month for ΔT to ensure same instant → same result
-        let decimalYear = Double(utc.year) + (Double(utc.month) - 0.5) / 12.0
+        // Use exact UTC fractional year for Delta T interpolation.
+        let decimalYear = Self.fractionalYear(
+            year: utc.year,
+            month: utc.month,
+            day: utc.day,
+            hour: utc.hour,
+            minute: utc.minute,
+            second: utc.second
+        )
         let dayFraction =
             Double(utc.day) + Double(utc.hour) / 24.0 + Double(utc.minute) / 1440.0
             + Double(utc.second) / 86400.0
@@ -118,8 +125,7 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         self.cachedGreenwichApparentSiderealTime = greenwichApparentSiderealTime
     }
 
-    /// Decimal year for ΔT lookup (based on UTC year/month).
-    /// Espenak & Meeus formula: y = utcYear + (utcMonth - 0.5) / 12
+    /// Decimal year for Delta T lookup, based on the exact UTC instant.
     public var decimalYear: Double {
         cachedDecimalYear
     }
@@ -264,5 +270,28 @@ public struct CivilMoment: Sendable, Hashable, Codable {
             minute: utcMinute,
             second: utcSecond
         )
+    }
+
+    private static func fractionalYear(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        minute: Int,
+        second: Int
+    ) -> Double {
+        let daysBeforeMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+        var dayOfYear = daysBeforeMonth[month - 1] + day
+        if month > 2 && Validation.daysInMonth(month: 2, year: year) == 29 {
+            dayOfYear += 1
+        }
+
+        let fractionOfDay = (
+            Double(hour) / 24.0
+                + Double(minute) / 1440.0
+                + Double(second) / 86400.0
+        )
+        let daysInYear = Validation.daysInMonth(month: 2, year: year) == 29 ? 366.0 : 365.0
+        return Double(year) + (Double(dayOfYear - 1) + fractionOfDay) / daysInYear
     }
 }

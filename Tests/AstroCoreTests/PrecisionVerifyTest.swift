@@ -12,8 +12,7 @@ struct PrecisionDriftCheck {
     @Test func sunPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.sunPosition(for: m)
-        // Previously verified: 280.3689153545049
-        let diff = abs(pos.longitude - 280.3689153545049)
+        let diff = abs(pos.longitude - 280.3689148247274)
         print("Sun drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Sun longitude drifted!")
     }
@@ -21,7 +20,7 @@ struct PrecisionDriftCheck {
     @Test func moonPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.moonPosition(for: m)
-        let diff = abs(pos.longitude - 223.32372926144598)
+        let diff = abs(pos.longitude - 223.32372301435325)
         print("Moon drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Moon longitude drifted!")
     }
@@ -29,7 +28,7 @@ struct PrecisionDriftCheck {
     @Test func mercuryPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.planetPosition(.mercury, for: m)
-        let diff = abs(pos.longitude - 271.88930368367636)
+        let diff = abs(pos.longitude - 271.8893028749247)
         print("Mercury drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Mercury longitude drifted!")
     }
@@ -37,7 +36,7 @@ struct PrecisionDriftCheck {
     @Test func venusPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.planetPosition(.venus, for: m)
-        let diff = abs(pos.longitude - 241.56581058768288)
+        let diff = abs(pos.longitude - 241.56580995937026)
         print("Venus drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Venus longitude drifted!")
     }
@@ -45,7 +44,7 @@ struct PrecisionDriftCheck {
     @Test func marsPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.planetPosition(.mars, for: m)
-        let diff = abs(pos.longitude - 327.96332447607824)
+        let diff = abs(pos.longitude - 327.9633240729783)
         print("Mars drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Mars longitude drifted!")
     }
@@ -53,7 +52,7 @@ struct PrecisionDriftCheck {
     @Test func jupiterPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.planetPosition(.jupiter, for: m)
-        let diff = abs(pos.longitude - 25.253155123923378)
+        let diff = abs(pos.longitude - 25.253155102740763)
         print("Jupiter drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Jupiter longitude drifted!")
     }
@@ -61,7 +60,7 @@ struct PrecisionDriftCheck {
     @Test func saturnPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.planetPosition(.saturn, for: m)
-        let diff = abs(pos.longitude - 40.39568055866748)
+        let diff = abs(pos.longitude - 40.39568056903263)
         print("Saturn drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Saturn longitude drifted!")
     }
@@ -70,7 +69,7 @@ struct PrecisionDriftCheck {
         let m = try CivilMoment(year: 1990, month: 8, day: 15, hour: 14, minute: 30, timeZoneIdentifier: "America/New_York")
         let coord = try GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
         let asc = try AstroCalculator.ascendant(for: m, coordinate: coord)
-        let diff = abs(asc.eclipticLongitude - 240.93003034224864)
+        let diff = abs(asc.eclipticLongitude - 240.93003034223938)
         print("ASC drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Ascendant longitude drifted!")
     }

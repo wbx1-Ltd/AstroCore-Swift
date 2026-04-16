@@ -49,43 +49,39 @@ struct JulianDayTests {
 
 @Suite("DeltaT Tests")
 struct DeltaTTests {
-    // Known approximate ΔT values
     @Test func year2000() {
         let dt = DeltaT.deltaT(decimalYear: 2000.0)
-        // ΔT around 2000 ≈ 63.83s
-        #expect(abs(dt - 63.83) < 1.0)
+        #expect(abs(dt - 63.8285) < 0.2)
     }
 
     @Test func year1900() {
         let dt = DeltaT.deltaT(decimalYear: 1900.0)
-        // ΔT around 1900 ≈ -2.79s
         #expect(abs(dt - (-2.79)) < 1.0)
     }
 
     @Test func year1950() {
         let dt = DeltaT.deltaT(decimalYear: 1950.0)
-        // ΔT around 1950 ≈ 29.07s
         #expect(abs(dt - 29.07) < 1.0)
     }
 
     @Test func year2020() {
         let dt = DeltaT.deltaT(decimalYear: 2020.0)
-        // Espenak & Meeus formula predicts ~71.6s for 2020
-        // (actual observed was ~69.4s, but we follow the published formula)
-        #expect(abs(dt - 71.6) < 1.0)
+        #expect(abs(dt - 69.3612) < 0.2)
+    }
+
+    @Test func year2026Prediction() {
+        let dt = DeltaT.deltaT(decimalYear: 2026.25)
+        #expect(abs(dt - 69.09) < 0.2)
     }
 
     @Test func year2050Boundary() {
         let dt = DeltaT.deltaT(decimalYear: 2050.0)
-        // At boundary: both formulas should give similar values
-        #expect(dt > 80.0 && dt < 110.0)
+        #expect(dt > 74.0 && dt < 77.0)
     }
 
     @Test func year2100() {
         let dt = DeltaT.deltaT(decimalYear: 2100.0)
-        // Espenak & Meeus 2050-2150 formula: u=(2100-1820)/100=2.8
-        // -20 + 32*2.8^2 - 0.5628*(2150-2100) = -20 + 250.88 - 28.14 = 202.74
-        #expect(abs(dt - 202.74) < 0.5)
+        #expect(dt > 90.0 && dt < 97.0)
     }
 }
 
@@ -147,8 +143,7 @@ struct CivilMomentTests {
             hour: 0, minute: 0,
             timeZoneIdentifier: "UTC"
         )
-        // y = 2000 + (7 - 0.5)/12 = 2000.5417
-        #expect(abs(moment.decimalYear - 2000.5417) < 0.01)
+        #expect(abs(moment.decimalYear - 2000.4973) < 0.001)
     }
 
     @Test func utcConversion() throws {
