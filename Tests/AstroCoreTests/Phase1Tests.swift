@@ -69,6 +69,11 @@ struct DeltaTTests {
         #expect(abs(dt - 69.3612) < 0.2)
     }
 
+    @Test func year1963HistoricSample() {
+        let dt = DeltaT.deltaT(decimalYear: 1963.0)
+        #expect(abs(dt - 34.466) < 0.1)
+    }
+
     @Test func year2026Prediction() {
         let dt = DeltaT.deltaT(decimalYear: 2026.25)
         #expect(abs(dt - 69.09) < 0.2)
