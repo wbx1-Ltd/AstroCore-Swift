@@ -35,7 +35,7 @@ struct BenchmarkTests {
             year: 2000, month: 6, day: 21, hour: 12, minute: 0,
             timeZoneIdentifier: "UTC"
         )
-        let iterations = 10000
+        let iterations = 5000
         let result = benchmark(iterations: iterations) {
             _ = AstroCalculator.sunPosition(for: moment)
         }
@@ -47,8 +47,8 @@ struct BenchmarkTests {
             year: 2000, month: 1, day: 1, hour: 12, minute: 0,
             timeZoneIdentifier: "UTC"
         )
-        let iterations = 100000
-        let result = benchmark(iterations: iterations, warmup: 1000) {
+        let iterations = 20000
+        let result = benchmark(iterations: iterations, warmup: 500) {
             _ = AstroCalculator.moonPosition(for: moment)
         }
         print("🌙  Moon position: \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(iterations) iterations, \(String(format: "%.3f", result.totalSeconds))s total)")
@@ -60,7 +60,7 @@ struct BenchmarkTests {
             timeZoneIdentifier: "UTC"
         )
         let bodies: [CelestialBody] = [.mercury, .venus, .mars, .jupiter, .saturn]
-        let iterations = 5000
+        let iterations = 500
         for body in bodies {
             let result = benchmark(iterations: iterations) {
                 _ = AstroCalculator.planetPosition(body, for: moment)
@@ -75,11 +75,29 @@ struct BenchmarkTests {
             timeZoneIdentifier: "America/New_York"
         )
         let coord = try GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
-        let iterations = 1_000_000
+        let iterations = 200_000
         let result = try benchmark(iterations: iterations, warmup: 1000) {
             _ = try AstroCalculator.ascendant(for: moment, coordinate: coord)
         }
-        print("♈  Ascendant: \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(iterations) iterations, \(String(format: "%.3f", result.totalSeconds))s total)")
+        print("ascendant: \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(iterations) iterations, \(String(format: "%.3f", result.totalSeconds))s total)")
+    }
+
+    @Test func benchmarkHouseSystems() throws {
+        let fixture = try AstroCoreTestSupport.newYork1990()
+        let iterations = 5000
+
+        for system in HouseSystem.allCases {
+            let result = try benchmark(iterations: iterations, warmup: 100) {
+                _ = try AstroCalculator.houses(
+                    for: fixture.moment,
+                    coordinate: fixture.coordinate,
+                    system: system
+                )
+            }
+            print(
+                "houses[\(system.displayName)]: \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(iterations) iterations)"
+            )
+        }
     }
 
     @Test func benchmarkFullNatalChart() throws {
@@ -88,7 +106,7 @@ struct BenchmarkTests {
             timeZoneIdentifier: "America/New_York"
         )
         let coord = try GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
-        let iterations = 2000
+        let iterations = 200
         let result = try benchmark(iterations: iterations, warmup: 20) {
             _ = try AstroCalculator.natalPositions(
                 for: moment,
@@ -98,7 +116,7 @@ struct BenchmarkTests {
             )
         }
         let perCallMs = result.perCallMicroseconds / 1000.0
-        print("📊  Full natal chart (7 bodies + ASC): \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(String(format: "%.2f", perCallMs)) ms)")
-        print("    Throughput: \(String(format: "%.0f", 1_000_000.0 / result.perCallMicroseconds)) charts/sec")
+        print("full natal chart (7 bodies + asc): \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(String(format: "%.2f", perCallMs)) ms)")
+        print("throughput: \(String(format: "%.0f", 1_000_000.0 / result.perCallMicroseconds)) charts/sec")
     }
 }
