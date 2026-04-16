@@ -1,25 +1,32 @@
 import Foundation
 
 // Morinus houses: pure 12-fold division of the celestial equator measured
-// from ARMC, each equator point projected to the ecliptic via the inverse
-// ecliptic-equator transform assuming β = 0.
+// from ARMC, each equator point transformed into ecliptic coordinates.
 //
-// For cusp n:
-//     α_n = ARMC + 30°·(n − 10)
-//     λ_n = atan2(sin(α_n), cos(α_n) · cos(ε))
+// The numbering mirrors the meridian layout:
+//     cusp 11 ← α = ARMC + 30°
+//     cusp 12 ← α = ARMC + 60°
+//     cusp  1 ← α = ARMC + 90°
+//     ...
+//     cusp 10 ← α = ARMC + 360° (= ARMC)
 //
-// Cusp 10 = MC (M = 0) by construction. Cusp 1 is the ecliptic point at
-// α = ARMC + 90°, which is NOT the Ascendant in general — Morinus notably
-// does NOT align cusps 1, 4, 7 with ASC, IC, DSC. Latitude never enters the
-// formula, so Morinus is defined at every latitude including the poles.
+// A point on the celestial equator has equatorial coordinates (α, δ = 0).
+// Transforming that point to the ecliptic yields:
+//     λ = atan2(sin(α) · cos(ε), cos(α))
+//
+// Morinus therefore does NOT force cusp 10 to equal the MC, and cusp 1 is not
+// the Ascendant either. Latitude never enters the formula, so Morinus is
+// defined at every latitude including the poles.
 enum MorinusHouses {
     static func cusps(context: HouseEngine.Context) -> [Double] {
         let ramc = context.lastDegrees
         let cosEps = TrigDeg.cos(context.obliquityDegrees)
 
         return (1...12).map { n in
-            let alpha = ramc + 30.0 * Double(n - 10)
-            return TrigDeg.atan2(TrigDeg.sin(alpha), TrigDeg.cos(alpha) * cosEps)
+            let alpha = AngleMath.normalized(
+                degrees: ramc + 30.0 * Double(n + 2)
+            )
+            return TrigDeg.atan2(TrigDeg.sin(alpha) * cosEps, TrigDeg.cos(alpha))
         }
     }
 }

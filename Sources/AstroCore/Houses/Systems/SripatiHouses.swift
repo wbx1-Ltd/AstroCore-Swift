@@ -8,10 +8,10 @@ enum SripatiHouses {
     static func cusps(context: HouseEngine.Context) -> [Double] {
         let porphyry = PorphyryHouses.porphyryCusps(angles: context.angles)
         return (0..<12).map { i in
-            let start = porphyry[i]
-            let end = porphyry[(i + 1) % 12]
+            let start = AngleMath.normalized(degrees: porphyry[(i + 11) % 12])
+            let end = AngleMath.normalized(degrees: porphyry[i])
             let delta = AngleMath.normalized(degrees: end - start)
-            return start + delta / 2.0
+            return AngleMath.normalized(degrees: start + delta / 2.0)
         }
     }
 }

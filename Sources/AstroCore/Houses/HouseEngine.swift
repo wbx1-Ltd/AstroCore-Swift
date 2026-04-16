@@ -20,9 +20,12 @@ enum HouseEngine {
             obliquityDegrees: moment.trueObliquity
         )
 
-        // Polar fallback: systems with hasPolarLimit fall back above the polar
-        // circle. The threshold matches Swiss Ephemeris behavior.
-        if system.hasPolarLimit && abs(coordinate.latitude) > 66.0 {
+        // Polar fallback: semi-arc systems become undefined only once the
+        // observer crosses the ecliptic polar circle, i.e. |φ| > 90° − ε.
+        // Using the moment's true obliquity avoids prematurely falling back in
+        // the ~66.0°...66.56° band where the ecliptic is still fully rising/setting.
+        let polarCircleLatitude = 90.0 - abs(context.obliquityDegrees)
+        if system.hasPolarLimit && abs(coordinate.latitude) > polarCircleLatitude {
             let resolved = try resolveFallback(
                 requested: system,
                 fallback: polarFallback,
@@ -90,12 +93,6 @@ enum HouseEngine {
             MorinusHouses.cusps(context: context)
         case .meridian:
             MeridianHouses.cusps(context: context)
-
-        case .sunshineTreindl, .sunshineMakransky,
-             .krusinski, .apc,
-             .horizontal, .axialRotation, .carter,
-             .pullenSD, .pullenSR:
-            throw .houseSystemNotYetImplemented(system: system)
         }
     }
 

@@ -64,9 +64,8 @@ enum AnglesEngine {
         guard absLat >= 0.1 else { return nil }
 
         // Vertex = ASC formula at colatitude (90° − |φ|) and LAST + 180°.
-        // Sign conventions follow Swiss Ephemeris: for the southern hemisphere
-        // the resulting longitude is shifted by 180° (the Vertex becomes the
-        // Antivertex seen from the northern hemisphere's perspective).
+        // For the southern hemisphere the resulting longitude is shifted by
+        // 180° so the returned point stays on the local western hemisphere.
         let colat = 90.0 - absLat
         let shiftedLast = AngleMath.normalized(degrees: lastDegrees + 180.0)
 

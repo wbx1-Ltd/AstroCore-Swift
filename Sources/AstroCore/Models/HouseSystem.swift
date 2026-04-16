@@ -15,24 +15,15 @@ public enum HouseSystem: String, CaseIterable, Sendable, Hashable, Codable {
     case placidus
     case koch
     case alcabitius
-    case sunshineTreindl
-    case sunshineMakransky
 
     // D. Great-circle projection
     case campanus
     case regiomontanus
     case morinus
     case topocentric
-    case krusinski
-    case apc
 
     // E. Special
-    case horizontal
     case meridian
-    case axialRotation
-    case carter
-    case pullenSD
-    case pullenSR
 }
 
 extension HouseSystem {
@@ -42,8 +33,7 @@ extension HouseSystem {
     /// its closed-form uses a scaled tan(φ) and stays well-defined up to |φ| < 90°.
     public var hasPolarLimit: Bool {
         switch self {
-        case .placidus, .koch, .alcabitius,
-             .sunshineTreindl, .sunshineMakransky:
+        case .placidus, .koch, .alcabitius:
             true
         default:
             false
@@ -62,20 +52,11 @@ extension HouseSystem {
         case .placidus: "Placidus"
         case .koch: "Koch"
         case .alcabitius: "Alcabitius"
-        case .sunshineTreindl: "Sunshine (Treindl)"
-        case .sunshineMakransky: "Sunshine (Makransky)"
         case .campanus: "Campanus"
         case .regiomontanus: "Regiomontanus"
         case .morinus: "Morinus"
         case .topocentric: "Topocentric"
-        case .krusinski: "Krusinski-Pisa-Goelzer"
-        case .apc: "APC"
-        case .horizontal: "Horizontal"
         case .meridian: "Meridian"
-        case .axialRotation: "Axial Rotation"
-        case .carter: "Carter Poli-Equatorial"
-        case .pullenSD: "Pullen SD"
-        case .pullenSR: "Pullen SR"
         }
     }
 }

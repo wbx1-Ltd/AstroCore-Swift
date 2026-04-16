@@ -1,18 +1,18 @@
 import Foundation
 
-// Koch (Geburts-Orts-Häuser, "birthplace houses"): trisect the MC's
-// semi-diurnal arc at the observer's geographic latitude, then compute the
-// Ascendant for each offset sidereal time.
+// Koch (Geburts-Orts-Häuser, "birthplace houses"): express the cusps as
+// Asc1 evaluations at four rectascensions derived from the MC's geometry.
 //
-// Let H_MC = arccos(−tan(φ)·tan(δ_MC)) be the MC's semi-diurnal arc.
-//   cusp 11 = ASC formula evaluated at ARMC − 2·H_MC/3
-//   cusp 12 = ASC formula evaluated at ARMC − H_MC/3
-//   cusp 2  = ASC formula evaluated at ARMC + H_IC/3
-//   cusp 3  = ASC formula evaluated at ARMC + 2·H_IC/3
-// where H_IC = 180° − H_MC is the IC's semi-diurnal arc (same latitude).
+// With th = ARMC, fi = geographic latitude, ε = obliquity and MC = λ_MC:
+//     sina = sin(MC) · sin(ε) / cos(fi)
+//     c    = atan(tan(fi) / cos(asin(sina)))
+//     ad3  = asin(sin(c) · sina) / 3
 //
-// The remaining cusps are angles (1, 4, 7, 10) or 180° opposites of the four
-// computed cusps (5 = 11+180°, 6 = 12+180°, 8 = 2+180°, 9 = 3+180°).
+// Then:
+//     cusp 11 = Asc1(th + 30°  − 2·ad3, fi)
+//     cusp 12 = Asc1(th + 60°  − ad3,   fi)
+//     cusp  2 = Asc1(th + 120° + ad3,   fi)
+//     cusp  3 = Asc1(th + 150° + 2·ad3, fi)
 //
 // Precondition: the dispatcher's polar-circle pre-check must have routed the
 // call away when |φ| > ~66°, where H_MC becomes undefined.
@@ -24,16 +24,11 @@ enum KochHouses {
         let mc = context.angles.midheaven
         let asc = context.angles.ascendant
 
-        // MC's declination and semi-diurnal arc at this latitude.
-        let sinDelta = TrigDeg.sin(epsilon) * TrigDeg.sin(mc)
-        let cosDelta = (1.0 - sinDelta * sinDelta).squareRoot()
-        let tanDelta = sinDelta / cosDelta
-        let polarFactor = TrigDeg.tan(phi) * tanDelta
-        // H is clamped in case the pre-check left a numerically borderline value;
-        // the dispatcher already routed polar latitudes to a fallback system.
-        let clamped = max(-1.0, min(1.0, -polarFactor))
-        let hMC = TrigDeg.acos(clamped)
-        let hIC = 180.0 - hMC
+        let sinA = TrigDeg.sin(mc) * TrigDeg.sin(epsilon) / TrigDeg.cos(phi)
+        let clampedSinA = max(-1.0, min(1.0, sinA))
+        let cosA = (1.0 - clampedSinA * clampedSinA).squareRoot()
+        let c = TrigDeg.atan2(TrigDeg.tan(phi), cosA)
+        let ad3 = TrigDeg.asin(TrigDeg.sin(c) * clampedSinA) / 3.0
 
         var cusps = [Double](repeating: 0.0, count: 12)
         cusps[0] = asc                                                  // 1
@@ -41,22 +36,10 @@ enum KochHouses {
         cusps[6] = AngleMath.normalized(degrees: asc + 180.0)           // 7 (DSC)
         cusps[9] = mc                                                   // 10
 
-        cusps[10] = ascendantAt(
-            ramcOffset: -2.0 * hMC / 3.0,
-            ramc: ramc, phi: phi, epsilon: epsilon
-        )                                                               // 11
-        cusps[11] = ascendantAt(
-            ramcOffset: -hMC / 3.0,
-            ramc: ramc, phi: phi, epsilon: epsilon
-        )                                                               // 12
-        cusps[1] = ascendantAt(
-            ramcOffset: hIC / 3.0,
-            ramc: ramc, phi: phi, epsilon: epsilon
-        )                                                               // 2
-        cusps[2] = ascendantAt(
-            ramcOffset: 2.0 * hIC / 3.0,
-            ramc: ramc, phi: phi, epsilon: epsilon
-        )                                                               // 3
+        cusps[10] = asc1(argumentDegrees: ramc + 30.0 - 2.0 * ad3, phi: phi, epsilon: epsilon)   // 11
+        cusps[11] = asc1(argumentDegrees: ramc + 60.0 - ad3, phi: phi, epsilon: epsilon)         // 12
+        cusps[1] = asc1(argumentDegrees: ramc + 120.0 + ad3, phi: phi, epsilon: epsilon)         // 2
+        cusps[2] = asc1(argumentDegrees: ramc + 150.0 + 2.0 * ad3, phi: phi, epsilon: epsilon)   // 3
 
         cusps[4] = AngleMath.normalized(degrees: cusps[10] + 180.0)     // 5 = 11+180
         cusps[5] = AngleMath.normalized(degrees: cusps[11] + 180.0)     // 6 = 12+180
@@ -66,14 +49,13 @@ enum KochHouses {
         return cusps
     }
 
-    private static func ascendantAt(
-        ramcOffset: Double,
-        ramc: Double,
+    private static func asc1(
+        argumentDegrees: Double,
         phi: Double,
         epsilon: Double
     ) -> Double {
         AscendantEngine.ascendantLongitude(
-            lastDegrees: AngleMath.normalized(degrees: ramc + ramcOffset),
+            lastDegrees: AngleMath.normalized(degrees: argumentDegrees - 90.0),
             trueObliquityDegrees: epsilon,
             latitudeDegrees: phi
         )
