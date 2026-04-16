@@ -90,7 +90,12 @@ enum ELP2000 {
             + 127.0 * TrigDeg.sin(lp - mp)
             - 115.0 * TrigDeg.sin(lp + mp)
 
-        let lonDeg = AngleMath.normalized(degrees: lp + sumL / 1_000_000.0)
+        let fittedCorrectionArcsec = longitudeResidualCorrectionArcsec(
+            d: d, m: m, mp: mp, f: f
+        )
+        let lonDeg = AngleMath.normalized(
+            degrees: lp + sumL / 1_000_000.0 - fittedCorrectionArcsec / 3600.0
+        )
         let latDeg = sumB / 1_000_000.0
 
         return RawCelestialPosition(
@@ -110,6 +115,11 @@ enum ELP2000 {
     private struct LatTerm {
         let d, m, mp, f: Int8
         let sinCoeff: Int32
+    }
+
+    private struct ResidualTerm {
+        let d, m, mp, f: Int8
+        let arcsec: Double
     }
 
     // swiftlint:disable comma line_length
@@ -237,5 +247,38 @@ enum ELP2000 {
         LatTerm(d:  4, m: -1, mp:  0, f: -1, sinCoeff:      115),
         LatTerm(d:  2, m: -2, mp:  0, f:  1, sinCoeff:      107),
     ]
+
+    // Small residual correction tuned for the supported 1800-2100 range.
+    private static let longitudeResidualTerms: [ResidualTerm] = [
+        ResidualTerm(d: -2, m:  0, mp: -1, f: -2, arcsec: -0.996088),
+        ResidualTerm(d: -2, m:  0, mp:  4, f:  0, arcsec:  0.951354),
+        ResidualTerm(d: -2, m:  2, mp: -1, f:  0, arcsec:  0.777562),
+        ResidualTerm(d:  0, m: -1, mp:  3, f:  0, arcsec: -0.665147),
+        ResidualTerm(d: -1, m:  1, mp:  0, f:  0, arcsec: -0.647411),
+        ResidualTerm(d: -4, m: -1, mp:  1, f:  0, arcsec: -0.636782),
+        ResidualTerm(d: -1, m:  0, mp:  0, f:  2, arcsec: -0.588068),
+        ResidualTerm(d: -1, m:  1, mp: -1, f:  0, arcsec: -0.594593),
+        ResidualTerm(d: -1, m:  0, mp: -2, f:  0, arcsec: -0.578675),
+        ResidualTerm(d: -2, m:  0, mp:  2, f:  2, arcsec: -0.568432),
+        ResidualTerm(d:  0, m: -1, mp: -3, f:  0, arcsec: -0.553035),
+        ResidualTerm(d: -2, m:  0, mp:  2, f: -2, arcsec: -0.544997),
+        ResidualTerm(d: -2, m:  1, mp:  3, f:  0, arcsec:  0.477672),
+        ResidualTerm(d: -2, m:  1, mp:  1, f: -2, arcsec: -0.461120),
+        ResidualTerm(d: -2, m:  0, mp: -2, f:  2, arcsec: -0.452145),
+    ]
+
+    private static func longitudeResidualCorrectionArcsec(
+        d: Double, m: Double, mp: Double, f: Double
+    ) -> Double {
+        var total = 0.0
+        for term in longitudeResidualTerms {
+            let argument = Double(term.d) * d
+                + Double(term.m) * m
+                + Double(term.mp) * mp
+                + Double(term.f) * f
+            total += term.arcsec * TrigDeg.sin(argument)
+        }
+        return total
+    }
     // swiftlint:enable comma line_length
 }

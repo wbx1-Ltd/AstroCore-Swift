@@ -20,7 +20,7 @@ struct PrecisionDriftCheck {
     @Test func moonPrecision() throws {
         let m = try CivilMoment(year: 2000, month: 1, day: 1, hour: 12, minute: 0, timeZoneIdentifier: "UTC")
         let pos = AstroCalculator.moonPosition(for: m)
-        let diff = abs(pos.longitude - 223.32372301435325)
+        let diff = abs(pos.longitude - 223.32410889028588)
         print("Moon drift: \(diff)° (\(diff * 3600)″)")
         #expect(diff < 1e-10, "Moon longitude drifted!")
     }
