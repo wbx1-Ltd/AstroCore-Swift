@@ -15,7 +15,7 @@ enum GeoNamesParser {
             let id = fields[0]
             let name = fields[1]
             guard let latitude = Double(fields[4]),
-                let longitude = Double(fields[5])
+                  let longitude = Double(fields[5])
             else { continue }
             let countryCode = fields[8]
             let population = Int(fields[14]) ?? 0
@@ -23,17 +23,17 @@ enum GeoNamesParser {
 
             // Validate coordinate ranges
             guard (-90.0...90.0).contains(latitude),
-                (-180.0...180.0).contains(longitude),
-                !timezone.isEmpty
+                  (-180.0...180.0).contains(longitude),
+                  !timezone.isEmpty
             else { continue }
 
             let cityRow: CityRow = [
                 id,
                 name,
                 countryCode,
-                Int((latitude * 100_000.0).rounded()),
-                Int((longitude * 100_000.0).rounded()),
-                timezone,
+                Int((latitude * 100000.0).rounded()),
+                Int((longitude * 100000.0).rounded()),
+                timezone
             ]
             cities.append((population: population, row: cityRow))
         }

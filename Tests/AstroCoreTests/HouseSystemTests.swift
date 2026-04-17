@@ -1,10 +1,39 @@
+@testable import AstroCore
 import Foundation
 import Testing
 
-@testable import AstroCore
-
 private let angleAlignedSystems: [HouseSystem] = [
-    .porphyry, .placidus, .koch, .alcabitius, .campanus, .regiomontanus, .topocentric,
+    .porphyry, .placidus, .koch, .alcabitius, .campanus, .regiomontanus, .topocentric
+]
+
+private let parisHorizontalCusps: [Double] = [
+    95.494990239742, 143.569151565527, 185.931903802532, 210.219647778581,
+    227.900895333892, 246.695123421919, 275.494990239742, 323.569151565527,
+    5.931903802532, 30.219647778581, 47.900895333892, 66.695123421919
+]
+
+private let parisCarterCusps: [Double] = [
+    135.182551935024, 166.573370917438, 199.121591708568, 230.089433681251,
+    258.637397350727, 286.269954959984, 315.182551935024, 346.573370917438,
+    19.121591708568, 50.089433681251, 78.637397350727, 106.269954959984
+]
+
+private let parisMeridianCusps: [Double] = [
+    116.119644373870, 145.867620674753, 177.951802084253, 210.219647778581,
+    240.289669765802, 268.275632927776, 296.119644373870, 325.867620674753,
+    357.951802084253, 30.219647778581, 60.289669765802, 88.275632927776
+]
+
+private let parisGauquelinSectors: [Double] = [
+    135.182551935024, 126.067478434068, 116.262229979312, 105.670118263420,
+    94.208527331423, 81.885489972201, 68.901537510294, 55.663065664900,
+    42.642400232636, 30.219647778581, 18.626930852629, 7.965617835043,
+    358.242379796063, 349.403458567605, 341.362145933543, 334.018259004823,
+    327.270217892909, 321.021391487422, 315.182551935024, 306.067478434068,
+    296.262229979312, 285.670118263420, 274.208527331423, 261.885489972201,
+    248.901537510294, 235.663065664900, 222.642400232636, 210.219647778581,
+    198.626930852629, 187.965617835043, 178.242379796063, 169.403458567605,
+    161.362145933543, 154.018259004823, 147.270217892909, 141.021391487422
 ]
 
 @Suite("House Systems")
@@ -21,7 +50,8 @@ struct HouseSystemTests {
         }
 
         for armc in stride(from: 5.0, through: 355.0, by: 7.0)
-        where abs(armc - 90.0) > 1e-3 && abs(armc - 270.0) > 1e-3 {
+            where abs(armc - 90.0) > 1e-3 && abs(armc - 270.0) > 1e-3
+        {
             let midheaven = AnglesEngine.midheavenLongitude(
                 lastDegrees: armc,
                 trueObliquityDegrees: epsilon
@@ -297,6 +327,142 @@ struct HouseSystemTests {
         )
     }
 
+    @Test func horizontalUsesEastPointVertexAndMeridianAxes() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let horizontal = try AstroCalculator.houses(
+            for: fixture.moment,
+            coordinate: fixture.coordinate,
+            system: .horizontal
+        )
+
+        let antivertex = AngleMath.normalized(
+            degrees: (horizontal.angles.vertex ?? .nan) + 180.0
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            horizontal.cusps[0].eclipticLongitude,
+            antivertex,
+            tolerance: 1e-7,
+            "horizontal cusp 1"
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            horizontal.cusps[3].eclipticLongitude,
+            horizontal.angles.imumCoeli,
+            tolerance: 1e-7,
+            "horizontal cusp 4"
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            horizontal.cusps[6].eclipticLongitude,
+            horizontal.angles.vertex ?? .nan,
+            tolerance: 1e-7,
+            "horizontal cusp 7"
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            horizontal.cusps[9].eclipticLongitude,
+            horizontal.angles.midheaven,
+            tolerance: 1e-7,
+            "horizontal cusp 10"
+        )
+        AstroCoreTestSupport.expectCuspPartition(horizontal.cusps)
+    }
+
+    @Test func horizontalMatchesSwissReferenceFixture() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let horizontal = try AstroCalculator.houses(
+            for: fixture.moment,
+            coordinate: fixture.coordinate,
+            system: .horizontal
+        )
+
+        for (index, expected) in parisHorizontalCusps.enumerated() {
+            AstroCoreTestSupport.expectCircularlyEqual(
+                horizontal.cusps[index].eclipticLongitude,
+                expected,
+                tolerance: 3e-5,
+                "horizontal cusp \(index + 1)"
+            )
+        }
+    }
+
+    @Test func carterUsesAscendantAnchoredRightAscensionGrid() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let carter = try AstroCalculator.houses(
+            for: fixture.moment,
+            coordinate: fixture.coordinate,
+            system: .carter
+        )
+        let obliquity = fixture.moment.trueObliquity
+
+        AstroCoreTestSupport.expectCircularlyEqual(
+            carter.cusps[0].eclipticLongitude,
+            carter.angles.ascendant,
+            tolerance: 1e-9
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            carter.cusps[6].eclipticLongitude,
+            carter.angles.descendant,
+            tolerance: 1e-9
+        )
+        #expect(
+            AstroCoreTestSupport.circularDifference(
+                carter.cusps[9].eclipticLongitude,
+                carter.angles.midheaven
+            ) > 1.0
+        )
+
+        let baseRightAscension = AstroCoreTestSupport.rightAscensionOnEcliptic(
+            longitude: carter.cusps[0].eclipticLongitude,
+            obliquity: obliquity
+        )
+        for index in 1..<12 {
+            let rightAscension = AstroCoreTestSupport.rightAscensionOnEcliptic(
+                longitude: carter.cusps[index].eclipticLongitude,
+                obliquity: obliquity
+            )
+            AstroCoreTestSupport.expectCircularlyEqual(
+                rightAscension,
+                baseRightAscension + 30.0 * Double(index),
+                tolerance: 1e-7,
+                "carter RA step \(index + 1)"
+            )
+        }
+    }
+
+    @Test func carterMatchesSwissReferenceFixture() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let carter = try AstroCalculator.houses(
+            for: fixture.moment,
+            coordinate: fixture.coordinate,
+            system: .carter
+        )
+
+        for (index, expected) in parisCarterCusps.enumerated() {
+            AstroCoreTestSupport.expectCircularlyEqual(
+                carter.cusps[index].eclipticLongitude,
+                expected,
+                tolerance: 3e-5,
+                "carter cusp \(index + 1)"
+            )
+        }
+    }
+
+    @Test func meridianMatchesSwissAxialRotationReferenceFixture() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let meridian = try AstroCalculator.houses(
+            for: fixture.moment,
+            coordinate: fixture.coordinate,
+            system: .meridian
+        )
+
+        for (index, expected) in parisMeridianCusps.enumerated() {
+            AstroCoreTestSupport.expectCircularlyEqual(
+                meridian.cusps[index].eclipticLongitude,
+                expected,
+                tolerance: 3e-5,
+                "meridian cusp \(index + 1)"
+            )
+        }
+    }
+
     @Test func topocentricTracksPlacidusAndProjectionSystemsStayDistinct() throws {
         let fixture = try AstroCoreTestSupport.paris1995()
         let topocentric = try AstroCalculator.houses(
@@ -395,5 +561,53 @@ struct HouseSystemTests {
             system: .topocentric
         )
         #expect(topocentric.resolvedSystem == .topocentric)
+    }
+
+    @Test func gauquelinUsesIndependentClockwiseSectorModel() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let sectors = try AstroCalculator.gauquelinSectors(
+            for: fixture.moment,
+            coordinate: fixture.coordinate
+        )
+
+        AstroCoreTestSupport.expectValidGauquelinSectors(sectors.sectors)
+        AstroCoreTestSupport.expectClockwiseSectorPartition(sectors.sectors)
+        AstroCoreTestSupport.expectCircularlyEqual(
+            sectors.sectors[0].eclipticLongitude,
+            sectors.angles.ascendant,
+            tolerance: 1e-9
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            sectors.sectors[9].eclipticLongitude,
+            sectors.angles.midheaven,
+            tolerance: 1e-9
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            sectors.sectors[18].eclipticLongitude,
+            sectors.angles.descendant,
+            tolerance: 1e-9
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            sectors.sectors[27].eclipticLongitude,
+            sectors.angles.imumCoeli,
+            tolerance: 1e-9
+        )
+    }
+
+    @Test func gauquelinMatchesSwissReferenceFixture() throws {
+        let fixture = try AstroCoreTestSupport.paris1995()
+        let sectors = try AstroCalculator.gauquelinSectors(
+            for: fixture.moment,
+            coordinate: fixture.coordinate
+        )
+
+        for (index, expected) in parisGauquelinSectors.enumerated() {
+            AstroCoreTestSupport.expectCircularlyEqual(
+                sectors.sectors[index].eclipticLongitude,
+                expected,
+                tolerance: 3e-5,
+                "gauquelin sector \(index + 1)"
+            )
+        }
     }
 }

@@ -1,12 +1,12 @@
 import Foundation
 
 public struct CivilMoment: Sendable, Hashable, Codable {
-    public let year: Int        // 1800...2100
-    public let month: Int       // 1...12
-    public let day: Int         // 1...31
-    public let hour: Int        // 0...23
-    public let minute: Int      // 0...59
-    public let second: Int      // 0...59
+    public let year: Int // 1800...2100
+    public let month: Int // 1...12
+    public let day: Int // 1...31
+    public let hour: Int // 0...23
+    public let minute: Int // 0...59
+    public let second: Int // 0...59
     public let timeZoneIdentifier: String // IANA, e.g. "America/New_York"
 
     private let cachedDecimalYear: Double
@@ -40,7 +40,8 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         let maxDay = Validation.daysInMonth(month: month, year: year)
         guard (1...maxDay).contains(day) else {
             throw .invalidCivilMoment(
-                detail: "Day \(day) out of range 1...\(maxDay) for \(year)-\(month)")
+                detail: "Day \(day) out of range 1...\(maxDay) for \(year)-\(month)"
+            )
         }
         guard (0...23).contains(hour) else {
             throw .invalidCivilMoment(detail: "Hour \(hour) out of range 0...23")
@@ -76,7 +77,7 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         )
         let dayFraction =
             Double(utc.day) + Double(utc.hour) / 24.0 + Double(utc.minute) / 1440.0
-            + Double(utc.second) / 86400.0
+                + Double(utc.second) / 86400.0
         let julianDayUT = JulianDay.julianDay(
             year: utc.year,
             month: utc.month,
@@ -126,7 +127,7 @@ public struct CivilMoment: Sendable, Hashable, Codable {
     }
 
     /// Decimal year for Delta T lookup, based on the exact UTC instant.
-    public var decimalYear: Double {
+    var decimalYear: Double {
         cachedDecimalYear
     }
 
@@ -253,11 +254,11 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         )
 
         guard let utcYear = utc.year,
-            let utcMonth = utc.month,
-            let utcDay = utc.day,
-            let utcHour = utc.hour,
-            let utcMinute = utc.minute,
-            let utcSecond = utc.second
+              let utcMonth = utc.month,
+              let utcDay = utc.day,
+              let utcHour = utc.hour,
+              let utcMinute = utc.minute,
+              let utcSecond = utc.second
         else {
             throw .dateConversionFailed
         }

@@ -20,9 +20,6 @@ import Foundation
 //
 // Precondition: dispatcher has routed polar latitudes (|φ| > ~66°) away.
 enum PlacidusHouses {
-    private static let maxIterations = 60
-    private static let convergenceDegrees = 1e-10
-
     static func cusps(context: HouseEngine.Context) -> [Double] {
         let ramc = context.lastDegrees
         let epsilon = context.obliquityDegrees
@@ -32,39 +29,39 @@ enum PlacidusHouses {
         let porphyry = PorphyryHouses.porphyryCusps(angles: context.angles)
 
         var cusps = [Double](repeating: 0.0, count: 12)
-        cusps[0] = asc                                              // 1
-        cusps[3] = AngleMath.normalized(degrees: mc + 180.0)        // 4 (IC)
-        cusps[6] = AngleMath.normalized(degrees: asc + 180.0)       // 7 (DSC)
-        cusps[9] = mc                                               // 10
+        cusps[0] = asc // 1
+        cusps[3] = AngleMath.normalized(degrees: mc + 180.0) // 4 (IC)
+        cusps[6] = AngleMath.normalized(degrees: asc + 180.0) // 7 (DSC)
+        cusps[9] = mc // 10
 
         // East-of-meridian, above horizon: cusps 11, 12
         cusps[10] = solve(
             fraction: 1.0 / 3.0,
             ramc: ramc, phi: phi, epsilon: epsilon,
             initial: porphyry[10]
-        )                                                           // 11
+        ) // 11
         cusps[11] = solve(
             fraction: 2.0 / 3.0,
             ramc: ramc, phi: phi, epsilon: epsilon,
             initial: porphyry[11]
-        )                                                           // 12
+        ) // 12
         // West-of-meridian, above horizon: cusps 8, 9
         cusps[7] = solve(
             fraction: -2.0 / 3.0,
             ramc: ramc, phi: phi, epsilon: epsilon,
             initial: porphyry[7]
-        )                                                           // 8
+        ) // 8
         cusps[8] = solve(
             fraction: -1.0 / 3.0,
             ramc: ramc, phi: phi, epsilon: epsilon,
             initial: porphyry[8]
-        )                                                           // 9
+        ) // 9
 
         // Below-horizon cusps are opposites.
         cusps[4] = AngleMath.normalized(degrees: cusps[10] + 180.0) // 5
         cusps[5] = AngleMath.normalized(degrees: cusps[11] + 180.0) // 6
-        cusps[1] = AngleMath.normalized(degrees: cusps[7] + 180.0)  // 2
-        cusps[2] = AngleMath.normalized(degrees: cusps[8] + 180.0)  // 3
+        cusps[1] = AngleMath.normalized(degrees: cusps[7] + 180.0) // 2
+        cusps[2] = AngleMath.normalized(degrees: cusps[8] + 180.0) // 3
 
         return cusps
     }
@@ -77,38 +74,12 @@ enum PlacidusHouses {
         epsilon: Double,
         initial: Double
     ) -> Double {
-        var lambda = initial
-        let tanPhi = TrigDeg.tan(phi)
-        let sinEps = TrigDeg.sin(epsilon)
-        let cosEps = TrigDeg.cos(epsilon)
-
-        for _ in 0..<maxIterations {
-            let sinDelta = TrigDeg.sin(lambda) * sinEps
-            let cos2Delta = 1.0 - sinDelta * sinDelta
-            guard cos2Delta > 1e-20 else { break }
-            let cosDelta = cos2Delta.squareRoot()
-            let tanDelta = sinDelta / cosDelta
-
-            let polarFactor = tanPhi * tanDelta
-            // Clamp defensively: the dispatcher's polar pre-check is by latitude
-            // and won't catch borderline MC declinations near the arctic circle.
-            let clamped = max(-1.0, min(1.0, -polarFactor))
-            let H = TrigDeg.acos(clamped)
-            let alpha = ramc + f * H
-
-            let newLambda = AngleMath.normalized(
-                degrees: TrigDeg.atan2(TrigDeg.sin(alpha), TrigDeg.cos(alpha) * cosEps)
-            )
-
-            // Shortest angular distance for the convergence check.
-            var diff = newLambda - lambda
-            if diff > 180.0 { diff -= 360.0 }
-            if diff < -180.0 { diff += 360.0 }
-            if abs(diff) < convergenceDegrees {
-                return newLambda
-            }
-            lambda = newLambda
-        }
-        return lambda
+        SemiArcInterpolation.solve(
+            fraction: f,
+            ramc: ramc,
+            latitude: phi,
+            obliquity: epsilon,
+            initial: initial
+        )
     }
 }

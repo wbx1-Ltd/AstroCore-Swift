@@ -1,7 +1,6 @@
+@testable import AstroCore
 import Foundation
 import Testing
-
-@testable import AstroCore
 
 struct ChartFixture: Sendable, CustomStringConvertible {
     let name: String
@@ -9,6 +8,21 @@ struct ChartFixture: Sendable, CustomStringConvertible {
     let coordinate: GeoCoordinate
 
     var description: String { name }
+}
+
+private struct SwissHouseRequest: Codable {
+    let name: String
+    let julianDayUT: Double
+    let latitude: Double
+    let longitude: Double
+    let systems: [String]
+    let includeGauquelin: Bool
+}
+
+struct SwissHouseSnapshot: Codable, Sendable {
+    let name: String
+    let systems: [String: [Double]]
+    let gauquelin: [Double]?
 }
 
 enum AstroCoreTestSupport {
@@ -19,6 +33,10 @@ enum AstroCoreTestSupport {
 
     static func forwardArc(_ start: Double, _ end: Double) -> Double {
         AngleMath.normalized(degrees: end - start)
+    }
+
+    static func clockwiseArc(_ start: Double, _ end: Double) -> Double {
+        AngleMath.normalized(degrees: start - end)
     }
 
     static func expectCircularlyEqual(
@@ -65,10 +83,48 @@ enum AstroCoreTestSupport {
         #expect(abs(total - 360.0) < tolerance)
     }
 
+    static func expectValidGauquelinSectors(_ sectors: [GauquelinSector]) {
+        #expect(sectors.count == 36)
+        for (index, sector) in sectors.enumerated() {
+            #expect(sector.number == index + 1)
+            expectValidLongitude(sector.eclipticLongitude)
+            #expect(sector.degreeInSign >= 0.0 && sector.degreeInSign < 30.0)
+            #expect(sector.sign.contains(longitude: sector.eclipticLongitude))
+        }
+    }
+
+    static func expectClockwiseSectorPartition(
+        _ sectors: [GauquelinSector],
+        tolerance: Double = 1e-6
+    ) {
+        var total = 0.0
+        for index in 0..<36 {
+            let arc = clockwiseArc(
+                sectors[index].eclipticLongitude,
+                sectors[(index + 1) % 36].eclipticLongitude
+            )
+            #expect(arc > 0.0 && arc < 360.0)
+            total += arc
+        }
+        #expect(abs(total - 360.0) < tolerance)
+    }
+
+    static func rightAscensionOnEcliptic(
+        longitude: Double,
+        obliquity: Double
+    ) -> Double {
+        AngleMath.normalized(
+            degrees: TrigDeg.atan2(
+                TrigDeg.sin(longitude) * TrigDeg.cos(obliquity),
+                TrigDeg.cos(longitude)
+            )
+        )
+    }
+
     static func newYork1990() throws -> ChartFixture {
-        ChartFixture(
+        try ChartFixture(
             name: "new-york",
-            moment: try CivilMoment(
+            moment: CivilMoment(
                 year: 1990,
                 month: 8,
                 day: 15,
@@ -76,14 +132,14 @@ enum AstroCoreTestSupport {
                 minute: 30,
                 timeZoneIdentifier: "America/New_York"
             ),
-            coordinate: try GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
+            coordinate: GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
         )
     }
 
     static func london2000() throws -> ChartFixture {
-        ChartFixture(
+        try ChartFixture(
             name: "london",
-            moment: try CivilMoment(
+            moment: CivilMoment(
                 year: 2000,
                 month: 1,
                 day: 1,
@@ -91,14 +147,14 @@ enum AstroCoreTestSupport {
                 minute: 0,
                 timeZoneIdentifier: "Europe/London"
             ),
-            coordinate: try GeoCoordinate(latitude: 51.5074, longitude: -0.1278)
+            coordinate: GeoCoordinate(latitude: 51.5074, longitude: -0.1278)
         )
     }
 
     static func tokyo1985() throws -> ChartFixture {
-        ChartFixture(
+        try ChartFixture(
             name: "tokyo",
-            moment: try CivilMoment(
+            moment: CivilMoment(
                 year: 1985,
                 month: 6,
                 day: 15,
@@ -106,14 +162,14 @@ enum AstroCoreTestSupport {
                 minute: 0,
                 timeZoneIdentifier: "Asia/Tokyo"
             ),
-            coordinate: try GeoCoordinate(latitude: 35.6762, longitude: 139.6503)
+            coordinate: GeoCoordinate(latitude: 35.6762, longitude: 139.6503)
         )
     }
 
     static func paris1995() throws -> ChartFixture {
-        ChartFixture(
+        try ChartFixture(
             name: "paris",
-            moment: try CivilMoment(
+            moment: CivilMoment(
                 year: 1995,
                 month: 4,
                 day: 10,
@@ -121,14 +177,14 @@ enum AstroCoreTestSupport {
                 minute: 30,
                 timeZoneIdentifier: "Europe/Paris"
             ),
-            coordinate: try GeoCoordinate(latitude: 48.85, longitude: 2.35)
+            coordinate: GeoCoordinate(latitude: 48.85, longitude: 2.35)
         )
     }
 
     static func sydney2010() throws -> ChartFixture {
-        ChartFixture(
+        try ChartFixture(
             name: "sydney",
-            moment: try CivilMoment(
+            moment: CivilMoment(
                 year: 2010,
                 month: 12,
                 day: 15,
@@ -136,15 +192,125 @@ enum AstroCoreTestSupport {
                 minute: 0,
                 timeZoneIdentifier: "Australia/Sydney"
             ),
-            coordinate: try GeoCoordinate(latitude: -33.8688, longitude: 151.2093)
+            coordinate: GeoCoordinate(latitude: -33.8688, longitude: 151.2093)
         )
     }
 
     static func coreHouseFixtures() throws -> [ChartFixture] {
-        [
-            try newYork1990(),
-            try london2000(),
-            try tokyo1985(),
+        try [
+            newYork1990(),
+            london2000(),
+            tokyo1985()
         ]
+    }
+
+    static func swissLetter(for system: HouseSystem) -> String {
+        switch system {
+        case .equalASC: "A"
+        case .equalMC: "D"
+        case .wholeSign: "W"
+        case .vehlow: "V"
+        case .porphyry: "O"
+        case .sripati: "S"
+        case .placidus: "P"
+        case .koch: "K"
+        case .alcabitius: "B"
+        case .campanus: "C"
+        case .regiomontanus: "R"
+        case .morinus: "M"
+        case .topocentric: "T"
+        case .horizontal: "H"
+        case .meridian: "X"
+        case .carter: "F"
+        }
+    }
+
+    static func swissHouseSnapshots(
+        fixtures: [ChartFixture],
+        systems: [HouseSystem],
+        includeGauquelin: Bool = false
+    ) throws -> [String: SwissHouseSnapshot] {
+        let requests = fixtures.map { fixture in
+            SwissHouseRequest(
+                name: fixture.name,
+                julianDayUT: fixture.moment.julianDayUT,
+                latitude: fixture.coordinate.latitude,
+                longitude: fixture.coordinate.longitude,
+                systems: systems.map(swissLetter(for:)),
+                includeGauquelin: includeGauquelin
+            )
+        }
+        let requestData = try JSONEncoder().encode(requests)
+        let script = """
+        import json
+        import sys
+        import swisseph as swe
+
+        requests = json.load(sys.stdin)
+        responses = []
+
+        for request in requests:
+            systems = {}
+            for letter in request["systems"]:
+                cusps, _ = swe.houses(
+                    request["julianDayUT"],
+                    request["latitude"],
+                    request["longitude"],
+                    letter.encode("ascii")
+                )
+                systems[letter] = cusps
+
+            gauquelin = None
+            if request["includeGauquelin"]:
+                gauquelin, _ = swe.houses(
+                    request["julianDayUT"],
+                    request["latitude"],
+                    request["longitude"],
+                    b"G"
+                )
+
+            responses.append({
+                "name": request["name"],
+                "systems": systems,
+                "gauquelin": gauquelin,
+            })
+
+        json.dump(responses, sys.stdout)
+        """
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [
+            "uv", "run",
+            "--python", "3.13",
+            "--with", "pyswisseph",
+            "python", "-c", script
+        ]
+
+        let stdinPipe = Pipe()
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardInput = stdinPipe
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+
+        try process.run()
+        stdinPipe.fileHandleForWriting.write(requestData)
+        try stdinPipe.fileHandleForWriting.close()
+        let output = try stdoutPipe.fileHandleForReading.readToEnd() ?? Data()
+        let errors = try stderrPipe.fileHandleForReading.readToEnd() ?? Data()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            let message = String(bytes: errors, encoding: .utf8) ?? "Unknown error"
+            throw NSError(
+                domain: "AstroCoreTests.SwissVerification",
+                code: Int(process.terminationStatus),
+                userInfo: [NSLocalizedDescriptionKey: message]
+            )
+        }
+
+        let snapshots = try JSONDecoder().decode([SwissHouseSnapshot].self, from: output)
+        return Dictionary(uniqueKeysWithValues: snapshots.map { ($0.name, $0) })
     }
 }

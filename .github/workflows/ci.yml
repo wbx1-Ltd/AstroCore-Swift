@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+
+jobs:
+  format:
+    name: Quality / Format
+    runs-on: macos-26
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install SwiftFormat
+        run: |
+          brew list swiftformat >/dev/null 2>&1 || brew install swiftformat
+
+      - name: Verify formatting
+        run: |
+          swiftformat . \
+            --config .swiftformat \
+            --lint \
+            --reporter github-actions-log
+
+  lint:
+    name: Quality / Lint
+    runs-on: macos-26
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install SwiftLint
+        run: |
+          brew list swiftlint >/dev/null 2>&1 || brew install swiftlint
+
+      - name: Run SwiftLint
+        run: |
+          swiftlint lint . \
+            --config .swiftlint.yml \
+            --strict \
+            --force-exclude \
+            --reporter github-actions-logging
+
+  swift-test:
+    name: Test / SwiftTest
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Run release tests
+        run: swift test -c release

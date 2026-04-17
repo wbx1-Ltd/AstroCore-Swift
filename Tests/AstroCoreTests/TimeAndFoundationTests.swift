@@ -1,7 +1,6 @@
+@testable import AstroCore
 import Foundation
 import Testing
-
-@testable import AstroCore
 
 struct JulianDayCase: Sendable, CustomStringConvertible {
     let name: String
@@ -17,7 +16,7 @@ private let julianDayCases: [JulianDayCase] = [
     .init(name: "epoch-2000", year: 2000, month: 1, dayFraction: 1.5, expected: 2451545.0),
     .init(name: "jan-1999", year: 1999, month: 1, dayFraction: 1.0, expected: 2451179.5),
     .init(name: "oct-1957", year: 1957, month: 10, dayFraction: 4.81, expected: 2436116.31),
-    .init(name: "apr-1987", year: 1987, month: 4, dayFraction: 10.0, expected: 2446895.5),
+    .init(name: "apr-1987", year: 1987, month: 4, dayFraction: 10.0, expected: 2446895.5)
 ]
 
 @Suite("Time and Foundation")
@@ -49,7 +48,7 @@ struct TimeAndFoundationTests {
             (0.0, 0.0),
             (45.0, 45.0),
             (360.0, 0.0),
-            (725.5, 5.5),
+            (725.5, 5.5)
         ]
 
         for (input, expected) in samples {
@@ -83,7 +82,7 @@ struct TimeAndFoundationTests {
     }
 
     @Test func deltaTCoversHistoricModernFutureAndClampedRanges() {
-        #expect(abs(DeltaT.deltaT(decimalYear: 1900.0) - (-2.79)) < 1.0)
+        #expect(abs(DeltaT.deltaT(decimalYear: 1900.0) - -2.79) < 1.0)
         #expect(abs(DeltaT.deltaT(decimalYear: 1950.0) - 29.07) < 1.0)
         #expect(abs(DeltaT.deltaT(decimalYear: 2000.0) - 63.8285) < 0.2)
         #expect(abs(DeltaT.deltaT(decimalYear: 2020.0) - 69.3612) < 0.2)

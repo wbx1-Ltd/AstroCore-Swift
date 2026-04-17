@@ -1,6 +1,5 @@
-import Testing
-
 @testable import AstroCoreLocations
+import Testing
 
 @Suite("CityIndex Tests")
 struct CityIndexTests {

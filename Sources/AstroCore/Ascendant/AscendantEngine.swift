@@ -1,7 +1,7 @@
 import Foundation
 
-// Ascendant (Rising Sign) calculation engine
-// λ_ASC = atan2( −cos(LAST), sin(ε)×tan(φ) + cos(ε)×sin(LAST) )
+/// Ascendant (Rising Sign) calculation engine
+/// λ_ASC = atan2( −cos(LAST), sin(ε)×tan(φ) + cos(ε)×sin(LAST) )
 enum AscendantEngine {
     /// Compute the ascendant for a given moment and geographic coordinate.
     static func compute(
@@ -9,7 +9,6 @@ enum AscendantEngine {
     ) throws(AstroError) -> AscendantResult {
         try coordinate.validateForAscendant()
 
-        let jdUT = moment.julianDayUT
         let trueObl = moment.trueObliquity
 
         // Local Apparent Sidereal Time
@@ -27,9 +26,6 @@ enum AscendantEngine {
             eclipticLongitude: ascLon,
             sign: zodiac.sign,
             degreeInSign: zodiac.degreeInSign,
-            localSiderealTimeDegrees: lastDeg,
-            julianDayUT: jdUT,
-            trueObliquity: trueObl,
             isBoundaryCase: zodiac.isBoundaryCase
         )
     }

@@ -1,15 +1,15 @@
 import Foundation
 
-// VSOP87D evaluation engine
-// Computes heliocentric ecliptic spherical coordinates (equinox of date)
+/// VSOP87D evaluation engine
+/// Computes heliocentric ecliptic spherical coordinates (equinox of date)
 enum VSOP87D {
     typealias Series = [[(Double, Double, Double)]]
     typealias SeriesBundle = (l: Series, b: Series, r: Series)
 
     struct SphericalPosition: Sendable {
         let longitude: Double // radians
-        let latitude: Double  // radians
-        let radius: Double    // AU
+        let latitude: Double // radians
+        let radius: Double // AU
     }
 
     /// Evaluate a VSOP87D series for one coordinate.
@@ -76,11 +76,11 @@ enum VSOP87D {
     /// Sun and Moon use dedicated engines (SolarPosition, ELP2000).
     static func planetSeries(_ body: CelestialBody) -> SeriesBundle {
         switch body {
-        case .mercury: return mercurySeries
-        case .venus:   return venusSeries
-        case .mars:    return marsSeries
-        case .jupiter: return jupiterSeries
-        case .saturn:  return saturnSeries
+        case .mercury: mercurySeries
+        case .venus: venusSeries
+        case .mars: marsSeries
+        case .jupiter: jupiterSeries
+        case .saturn: saturnSeries
         case .sun, .moon:
             fatalError("Use SolarPosition/ELP2000 for \(body)")
         }

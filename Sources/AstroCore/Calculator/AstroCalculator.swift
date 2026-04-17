@@ -1,8 +1,8 @@
 import Foundation
 
-// Single public entry point for all astronomical calculations
+/// Single public entry point for all astronomical calculations
 public enum AstroCalculator {
-    // --- Low-level (stable API) ---
+    /// --- Low-level (stable API) ---
     public static func julianDayUT(for moment: CivilMoment) -> Double {
         moment.julianDayUT
     }
@@ -14,14 +14,14 @@ public enum AstroCalculator {
         moment.localApparentSiderealTime(longitude: longitude)
     }
 
-    // --- Ascendant (requires coordinate) ---
+    /// --- Ascendant (requires coordinate) ---
     public static func ascendant(
         for moment: CivilMoment, coordinate: GeoCoordinate
     ) throws(AstroError) -> AscendantResult {
         try AscendantEngine.compute(for: moment, coordinate: coordinate)
     }
 
-    // --- Individual body positions (apparent tropical longitude) ---
+    /// --- Individual body positions (apparent tropical longitude) ---
     public static func sunPosition(
         for moment: CivilMoment
     ) -> CelestialPosition {
@@ -57,7 +57,7 @@ public enum AstroCalculator {
         }
     }
 
-    // --- Batch (compute only what's requested) ---
+    /// --- Batch (compute only what's requested) ---
     public static func natalPositions(
         for moment: CivilMoment,
         coordinate: GeoCoordinate? = nil,
@@ -69,8 +69,6 @@ public enum AstroCalculator {
         }
 
         // Compute shared values once
-        let jdUT = moment.julianDayUT
-        let dt = moment.deltaT
         let tau = moment.julianMillenniaTT
         let t = moment.julianCenturiesTT
         let nutationLongitude = moment.nutationLongitude
@@ -97,9 +95,6 @@ public enum AstroCalculator {
                 eclipticLongitude: ascLon,
                 sign: zodiac.sign,
                 degreeInSign: zodiac.degreeInSign,
-                localSiderealTimeDegrees: lastDeg,
-                julianDayUT: jdUT,
-                trueObliquity: trueObl,
                 isBoundaryCase: zodiac.isBoundaryCase
             )
         }
@@ -128,13 +123,11 @@ public enum AstroCalculator {
 
         return NatalPositions(
             ascendant: ascResult,
-            bodies: positions,
-            julianDayUT: jdUT,
-            deltaT: dt
+            bodies: positions
         )
     }
 
-    // --- Internal ---
+    /// --- Internal ---
     private static func timeParameters(
         for moment: CivilMoment
     ) -> (tau: Double, t: Double) {

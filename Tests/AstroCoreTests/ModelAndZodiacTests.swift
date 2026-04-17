@@ -1,7 +1,6 @@
+@testable import AstroCore
 import Foundation
 import Testing
-
-@testable import AstroCore
 
 @Suite("Models and Zodiac")
 struct ModelAndZodiacTests {
@@ -39,14 +38,18 @@ struct ModelAndZodiacTests {
             .porphyry, .sripati,
             .placidus, .koch, .alcabitius,
             .campanus, .regiomontanus, .morinus, .topocentric,
+            .horizontal,
             .meridian,
+            .carter
         ])
         #expect(HouseSystem.placidus.hasPolarLimit)
         #expect(HouseSystem.koch.hasPolarLimit)
         #expect(HouseSystem.alcabitius.hasPolarLimit)
         #expect(!HouseSystem.topocentric.hasPolarLimit)
         #expect(HouseSystem.equalASC.displayName == "Equal (ASC)")
-        #expect(HouseSystem.meridian.displayName == "Meridian")
+        #expect(HouseSystem.horizontal.displayName == "Horizontal / Azimuthal")
+        #expect(HouseSystem.meridian.displayName == "Meridian / Axial Rotation")
+        #expect(HouseSystem.carter.displayName == "Carter Poli-Equatorial")
     }
 
     @Test func astroErrorAndAnglesStayEquatableAndDerivedCorrectly() {
@@ -84,11 +87,21 @@ struct ModelAndZodiacTests {
         )
         let chartPayload = try JSONEncoder().encode(chart)
         let roundTripped = try JSONDecoder().decode(NatalChart.self, from: chartPayload)
+        let gauquelin = try AstroCalculator.gauquelinSectors(
+            for: fixture.moment,
+            coordinate: fixture.coordinate
+        )
+        let gauquelinPayload = try JSONEncoder().encode(gauquelin)
+        let gauquelinRoundTrip = try JSONDecoder().decode(
+            GauquelinResult.self,
+            from: gauquelinPayload
+        )
 
         #expect(chart.moment == roundTripped.moment)
         #expect(chart.coordinate == roundTripped.coordinate)
         #expect(chart.positions == roundTripped.positions)
         #expect(chart.houses == roundTripped.houses)
+        #expect(gauquelin == gauquelinRoundTrip)
     }
 
     @Test func houseResultTracksRequestedAndResolvedSystems() throws {

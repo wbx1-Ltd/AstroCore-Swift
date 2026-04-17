@@ -1,7 +1,7 @@
 import Foundation
 
-// Router for all 12-house systems. Delegates to a system-specific implementation
-// and handles polar fallback.
+/// Router for all 12-house systems. Delegates to a system-specific implementation
+/// and handles polar fallback.
 enum HouseEngine {
     static func compute(
         for moment: CivilMoment,
@@ -36,8 +36,7 @@ enum HouseEngine {
                 requested: system,
                 resolved: resolved,
                 cusps: cusps,
-                angles: angles,
-                julianDayUT: moment.julianDayUT
+                angles: angles
             )
         }
 
@@ -46,8 +45,7 @@ enum HouseEngine {
             requested: system,
             resolved: system,
             cusps: cusps,
-            angles: angles,
-            julianDayUT: moment.julianDayUT
+            angles: angles
         )
     }
 
@@ -56,8 +54,8 @@ enum HouseEngine {
         let moment: CivilMoment
         let coordinate: GeoCoordinate
         let angles: Angles
-        let lastDegrees: Double       // ARMC / LAST in degrees
-        let obliquityDegrees: Double  // True obliquity
+        let lastDegrees: Double // ARMC / LAST in degrees
+        let obliquityDegrees: Double // True obliquity
     }
 
     private static func dispatch(
@@ -89,10 +87,14 @@ enum HouseEngine {
             AlcabitiusHouses.cusps(context: context)
         case .topocentric:
             TopocentricHouses.cusps(context: context)
+        case .horizontal:
+            HorizontalHouses.cusps(context: context)
         case .morinus:
             MorinusHouses.cusps(context: context)
         case .meridian:
             MeridianHouses.cusps(context: context)
+        case .carter:
+            CarterHouses.cusps(context: context)
         }
     }
 
@@ -117,8 +119,7 @@ enum HouseEngine {
         requested: HouseSystem,
         resolved: HouseSystem,
         cusps: [Double],
-        angles: Angles,
-        julianDayUT: Double
+        angles: Angles
     ) -> HouseResult {
         precondition(cusps.count == 12, "House system must produce 12 cusps")
         let wrapped = cusps.enumerated().map { index, longitude in
@@ -135,8 +136,7 @@ enum HouseEngine {
             requestedSystem: requested,
             resolvedSystem: resolved,
             cusps: wrapped,
-            angles: angles,
-            julianDayUT: julianDayUT
+            angles: angles
         )
     }
 }

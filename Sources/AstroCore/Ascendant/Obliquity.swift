@@ -16,7 +16,7 @@ enum Obliquity {
         7.12,
         27.87,
         5.79,
-        2.45,
+        2.45
     ]
 
     /// Mean obliquity ε₀ in degrees.
@@ -30,7 +30,7 @@ enum Obliquity {
         return baseObliquityDegrees + arcsec / 3600.0
     }
 
-    // Horner's method
+    /// Horner's method
     private static func horner(_ x: Double, coeffs: [Double]) -> Double {
         var result = coeffs[coeffs.count - 1]
         for i in stride(from: coeffs.count - 2, through: 0, by: -1) {

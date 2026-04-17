@@ -36,20 +36,20 @@ enum AlcabitiusHouses {
         let sn3 = sna / 3.0
 
         var cusps = [Double](repeating: 0.0, count: 12)
-        cusps[0] = asc                                              // 1
-        cusps[3] = AngleMath.normalized(degrees: mc + 180.0)        // 4
-        cusps[6] = AngleMath.normalized(degrees: asc + 180.0)       // 7
-        cusps[9] = mc                                               // 10
+        cusps[0] = asc // 1
+        cusps[3] = AngleMath.normalized(degrees: mc + 180.0) // 4
+        cusps[6] = AngleMath.normalized(degrees: asc + 180.0) // 7
+        cusps[9] = mc // 10
 
-        cusps[10] = asc1(argumentDegrees: ramc + sd3, poleHeight: 0.0, epsilon: epsilon)              // 11
-        cusps[11] = asc1(argumentDegrees: ramc + 2.0 * sd3, poleHeight: 0.0, epsilon: epsilon)        // 12
+        cusps[10] = asc1(argumentDegrees: ramc + sd3, poleHeight: 0.0, epsilon: epsilon) // 11
+        cusps[11] = asc1(argumentDegrees: ramc + 2.0 * sd3, poleHeight: 0.0, epsilon: epsilon) // 12
         cusps[1] = asc1(argumentDegrees: ramc + 180.0 - 2.0 * sn3, poleHeight: 0.0, epsilon: epsilon) // 2
-        cusps[2] = asc1(argumentDegrees: ramc + 180.0 - sn3, poleHeight: 0.0, epsilon: epsilon)       // 3
+        cusps[2] = asc1(argumentDegrees: ramc + 180.0 - sn3, poleHeight: 0.0, epsilon: epsilon) // 3
 
-        cusps[4] = AngleMath.normalized(degrees: cusps[10] + 180.0)  // 5
-        cusps[5] = AngleMath.normalized(degrees: cusps[11] + 180.0)  // 6
-        cusps[7] = AngleMath.normalized(degrees: cusps[1] + 180.0)   // 8
-        cusps[8] = AngleMath.normalized(degrees: cusps[2] + 180.0)   // 9
+        cusps[4] = AngleMath.normalized(degrees: cusps[10] + 180.0) // 5
+        cusps[5] = AngleMath.normalized(degrees: cusps[11] + 180.0) // 6
+        cusps[7] = AngleMath.normalized(degrees: cusps[1] + 180.0) // 8
+        cusps[8] = AngleMath.normalized(degrees: cusps[2] + 180.0) // 9
 
         return cusps
     }

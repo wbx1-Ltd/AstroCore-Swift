@@ -1,16 +1,16 @@
 import Foundation
 
-// Semi-diurnal / semi-nocturnal arc computations.
-//
-// For a point on the celestial sphere with declination δ observed from
-// geographic latitude φ, the hour angle H at which the point crosses the
-// horizon satisfies:
-//   cos(H) = −tan(φ) × tan(δ)
-// H is the semi-diurnal arc (time above the horizon from rise to upper
-// transit, in degrees). The semi-nocturnal arc is 180° − H.
-//
-// When |tan(φ) × tan(δ)| > 1 the point is circumpolar (never rises or never
-// sets). Callers must check `isCircumpolar` before using the result.
+/// Semi-diurnal / semi-nocturnal arc computations.
+///
+/// For a point on the celestial sphere with declination δ observed from
+/// geographic latitude φ, the hour angle H at which the point crosses the
+/// horizon satisfies:
+///   cos(H) = −tan(φ) × tan(δ)
+/// H is the semi-diurnal arc (time above the horizon from rise to upper
+/// transit, in degrees). The semi-nocturnal arc is 180° − H.
+///
+/// When |tan(φ) × tan(δ)| > 1 the point is circumpolar (never rises or never
+/// sets). Callers must check `isCircumpolar` before using the result.
 enum SemiArc {
     struct Result: Sendable, Hashable {
         /// Declination of the point, in degrees.

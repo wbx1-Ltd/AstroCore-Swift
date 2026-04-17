@@ -1,7 +1,7 @@
 import Foundation
 
 enum AngleMath {
-    // Normalize degrees to [0, 360)
+    /// Normalize degrees to [0, 360)
     @inline(__always)
     static func normalized(degrees: Double) -> Double {
         if degrees > 0.0 && degrees < 360.0 { return degrees }

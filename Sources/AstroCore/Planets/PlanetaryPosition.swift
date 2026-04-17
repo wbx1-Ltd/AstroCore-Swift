@@ -1,6 +1,6 @@
 import Foundation
 
-// Heliocentric → geocentric conversion for planets with light-time correction
+/// Heliocentric → geocentric conversion for planets with light-time correction
 enum PlanetaryPosition {
     typealias Rect = (x: Double, y: Double, z: Double)
     private static let speedOfLightAUPerDay = 173.1446326846693

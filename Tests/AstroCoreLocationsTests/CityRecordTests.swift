@@ -1,7 +1,6 @@
+@testable import AstroCoreLocations
 import Foundation
 import Testing
-
-@testable import AstroCoreLocations
 
 @Suite("CityRecord Tests")
 struct CityRecordTests {
@@ -22,12 +21,12 @@ struct CityRecordTests {
         #expect(cities[1].name == "London")
         #expect(cities[1].countryCode == "GB")
         #expect(abs(cities[1].latitude - 51.50853) < 0.00001)
-        #expect(abs(cities[1].longitude - (-0.12574)) < 0.00001)
+        #expect(abs(cities[1].longitude - -0.12574) < 0.00001)
 
         #expect(cities[2].name == "New York City")
         #expect(cities[2].countryCode == "US")
         #expect(abs(cities[2].latitude - 40.71427) < 0.00001)
-        #expect(abs(cities[2].longitude - (-74.00597)) < 0.00001)
+        #expect(abs(cities[2].longitude - -74.00597) < 0.00001)
     }
 
     @Test func encodesBackToCompactArrayFormat() throws {
@@ -42,8 +41,8 @@ struct CityRecordTests {
         #expect(row[0] as? String == "2643743")
         #expect(row[1] as? String == "London")
         #expect(row[2] as? String == "GB")
-        #expect(row[3] as? Int == 5_150_853)
-        #expect(row[4] as? Int == -12_574)
+        #expect(row[3] as? Int == 5150853)
+        #expect(row[4] as? Int == -12574)
         #expect(row[5] as? String == "Europe/London")
     }
 
@@ -54,6 +53,6 @@ struct CityRecordTests {
         let coordinate = try city.coordinate
 
         #expect(abs(coordinate.latitude - 40.71427) < 0.00001)
-        #expect(abs(coordinate.longitude - (-74.00597)) < 0.00001)
+        #expect(abs(coordinate.longitude - -74.00597) < 0.00001)
     }
 }

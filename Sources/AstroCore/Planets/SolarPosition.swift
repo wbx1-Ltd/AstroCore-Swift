@@ -1,8 +1,8 @@
 import Foundation
 
-// Solar position from Earth's VSOP87D
-// λ_Sun = L_Earth + 180°, β_Sun = −B_Earth
-// Plus FK5 correction and aberration
+/// Solar position from Earth's VSOP87D
+/// λ_Sun = L_Earth + 180°, β_Sun = −B_Earth
+/// Plus FK5 correction and aberration
 enum SolarPosition {
     /// Compute geocentric ecliptic position of the Sun.
     static func compute(tau: Double, t: Double) -> RawCelestialPosition {
@@ -13,7 +13,6 @@ enum SolarPosition {
     static func compute(
         tau: Double, t: Double, earth: VSOP87D.SphericalPosition
     ) -> RawCelestialPosition {
-
         // Geocentric longitude = Earth's helio longitude + 180°
         var sunLon = earth.longitude + .pi
         let sunLat = -earth.latitude

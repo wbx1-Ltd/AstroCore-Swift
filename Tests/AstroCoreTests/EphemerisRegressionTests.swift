@@ -1,7 +1,6 @@
+@testable import AstroCore
 import Foundation
 import Testing
-
-@testable import AstroCore
 
 struct SolarRegressionCase: Sendable, CustomStringConvertible {
     let name: String
@@ -21,7 +20,7 @@ private let solarRegressionCases: [SolarRegressionCase] = [
     .init(name: "epoch-2000", year: 2000, month: 1, day: 1, hour: 12, minute: 0, expectedLongitude: 280.3689148247274, tolerance: 0.000001, expectedSign: .capricorn),
     .init(name: "solstice-2000", year: 2000, month: 6, day: 21, hour: 12, minute: 0, expectedLongitude: 90.40625104814757, tolerance: 0.001, expectedSign: .cancer),
     .init(name: "equinox-1990", year: 1990, month: 3, day: 20, hour: 12, minute: 0, expectedLongitude: 359.614, tolerance: 0.05, expectedSign: .pisces),
-    .init(name: "solstice-2024", year: 2024, month: 12, day: 21, hour: 12, minute: 0, expectedLongitude: 270.113, tolerance: 0.05, expectedSign: .capricorn),
+    .init(name: "solstice-2024", year: 2024, month: 12, day: 21, hour: 12, minute: 0, expectedLongitude: 270.113, tolerance: 0.05, expectedSign: .capricorn)
 ]
 
 @Suite("Ephemeris Regression")
@@ -94,7 +93,7 @@ struct EphemerisRegressionTests {
             (.venus, 241.56581962641636, .sagittarius),
             (.mars, 327.9633109921631, .aquarius),
             (.jupiter, 25.25310593667188, .aries),
-            (.saturn, 40.39564718958692, .taurus),
+            (.saturn, 40.39564718958692, .taurus)
         ]
 
         for (body, expectedLongitude, expectedSign) in expectations {
@@ -144,7 +143,7 @@ struct EphemerisRegressionTests {
         #expect(
             abs(PlanetaryPosition.gravitationalDeflectionArcsec(elongationDeg: 180.0)) < 1e-9
         )
-        #expect(abs(PlanetaryPosition.fk5LongitudeCorrectionArcsec() - (-0.09033)) < 0.001)
+        #expect(abs(PlanetaryPosition.fk5LongitudeCorrectionArcsec() - -0.09033) < 0.001)
         #expect(PlanetResiduals.correctionArcsec(for: .mercury, t: 0.0) != 0.0)
     }
 }

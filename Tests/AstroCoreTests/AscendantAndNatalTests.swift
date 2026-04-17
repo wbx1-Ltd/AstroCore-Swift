@@ -1,7 +1,6 @@
+@testable import AstroCore
 import Foundation
 import Testing
-
-@testable import AstroCore
 
 struct AscendantRegressionCase: Sendable, CustomStringConvertible {
     let name: String
@@ -24,7 +23,7 @@ private let ascendantRegressionCases: [AscendantRegressionCase] = [
     .init(name: "new-york", year: 1990, month: 8, day: 15, hour: 14, minute: 30, timeZoneIdentifier: "America/New_York", latitude: 40.7128, longitude: -74.0060, expectedLongitude: 240.93003034223938, tolerance: 0.000001, expectedSign: .sagittarius),
     .init(name: "london", year: 2000, month: 1, day: 1, hour: 0, minute: 0, timeZoneIdentifier: "Europe/London", latitude: 51.5074, longitude: -0.1278, expectedLongitude: 186.94, tolerance: 0.5, expectedSign: .libra),
     .init(name: "tokyo", year: 1985, month: 6, day: 15, hour: 8, minute: 0, timeZoneIdentifier: "Asia/Tokyo", latitude: 35.6762, longitude: 139.6503, expectedLongitude: 128.91, tolerance: 0.5, expectedSign: .leo),
-    .init(name: "berlin", year: 1975, month: 9, day: 20, hour: 15, minute: 0, timeZoneIdentifier: "Europe/Berlin", latitude: 52.5200, longitude: 13.4050, expectedLongitude: 277.54, tolerance: 0.5, expectedSign: .capricorn),
+    .init(name: "berlin", year: 1975, month: 9, day: 20, hour: 15, minute: 0, timeZoneIdentifier: "Europe/Berlin", latitude: 52.5200, longitude: 13.4050, expectedLongitude: 277.54, tolerance: 0.5, expectedSign: .capricorn)
 ]
 
 @Suite("Ascendant and Natal")
@@ -73,9 +72,20 @@ struct AscendantAndNatalTests {
         let eastern = try AstroCalculator.ascendant(for: moment, coordinate: east)
 
         AstroCoreTestSupport.expectCircularlyEqual(
-            western.localSiderealTimeDegrees,
-            eastern.localSiderealTimeDegrees,
+            AstroCalculator.localSiderealTimeDegrees(
+                for: moment,
+                longitude: west.longitude
+            ),
+            AstroCalculator.localSiderealTimeDegrees(
+                for: moment,
+                longitude: east.longitude
+            ),
             tolerance: 0.001
+        )
+        AstroCoreTestSupport.expectCircularlyEqual(
+            western.eclipticLongitude,
+            eastern.eclipticLongitude,
+            tolerance: 1e-9
         )
     }
 
@@ -164,8 +174,6 @@ struct AscendantAndNatalTests {
         #expect(natal.bodies[.moon] == moon)
         #expect(natal.bodies[.mercury] == mercury)
         #expect(natal.ascendant == ascendant)
-        #expect(abs(natal.julianDayUT - fixture.moment.julianDayUT) < 1e-12)
-        #expect(abs(natal.deltaT - fixture.moment.deltaT) < 1e-12)
     }
 
     @Test func natalChartCombinesPositionsHousesAndContext() throws {

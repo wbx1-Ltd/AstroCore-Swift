@@ -23,7 +23,7 @@ public struct GeoCoordinate: Sendable, Hashable, Codable {
 
     /// Validates that the latitude is suitable for ascendant calculation.
     /// - Throws: `AstroError.extremeLatitude` if |latitude| > 85°
-    public func validateForAscendant() throws(AstroError) {
+    func validateForAscendant() throws(AstroError) {
         guard abs(latitude) <= 85.0 else {
             throw .extremeLatitude
         }

@@ -1,10 +1,10 @@
 import Foundation
 
-// Equal-division house systems. All three are the same idea with different
-// anchor points:
-//   * Equal (ASC):   cusp 1 = ASC, each cusp = previous + 30°
-//   * Equal (MC):    cusp 10 = MC, cusp 1 = MC + 90°, etc.
-//   * Vehlow Equal:  cusp 1 = ASC − 15° (ASC sits mid-house instead of on cusp)
+/// Equal-division house systems. All three are the same idea with different
+/// anchor points:
+///   * Equal (ASC):   cusp 1 = ASC, each cusp = previous + 30°
+///   * Equal (MC):    cusp 10 = MC, cusp 1 = MC + 90°, etc.
+///   * Vehlow Equal:  cusp 1 = ASC − 15° (ASC sits mid-house instead of on cusp)
 enum EqualHouses {
     static func cuspsFromAscendant(context: HouseEngine.Context) -> [Double] {
         let start = context.angles.ascendant

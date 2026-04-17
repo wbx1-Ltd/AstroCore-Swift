@@ -1,6 +1,6 @@
 import Foundation
 
-// Sidereal Time — Meeus Ch.12
+/// Sidereal Time — Meeus Ch.12
 enum SiderealTime {
     /// Greenwich Mean Sidereal Time in degrees.
     /// Input: JD in UT.

@@ -63,22 +63,23 @@ enum AnglesEngine {
         let absLat = abs(latitudeDegrees)
         guard absLat >= 0.1 else { return nil }
 
-        // Vertex = ASC formula at colatitude (90° − |φ|) and LAST + 180°.
-        // For the southern hemisphere the resulting longitude is shifted by
-        // 180° so the returned point stays on the local western hemisphere.
-        let colat = 90.0 - absLat
-        let shiftedLast = AngleMath.normalized(degrees: lastDegrees + 180.0)
-
-        let asc = AscendantEngine.ascendantLongitude(
-            lastDegrees: shiftedLast,
-            trueObliquityDegrees: trueObliquityDegrees,
-            latitudeDegrees: colat
+        let zenith = EquatorialVector(
+            rightAscension: lastDegrees,
+            declination: latitudeDegrees
+        )
+        let westHorizon = EquatorialVector.horizonPoint(
+            azimuth: 270.0,
+            lastDegrees: lastDegrees,
+            latitudeDegrees: latitudeDegrees
+        )
+        let planeNormal = zenith.cross(westHorizon)
+        let candidate = planeNormal.eclipticIntersectionLongitude(
+            obliquityDegrees: trueObliquityDegrees
         )
 
-        // Southern-hemisphere correction: flip by 180°.
-        if latitudeDegrees < 0 {
-            return AngleMath.normalized(degrees: asc + 180.0)
+        if latitudeDegrees >= 0 {
+            return candidate
         }
-        return asc
+        return AngleMath.normalized(degrees: candidate + 180.0)
     }
 }

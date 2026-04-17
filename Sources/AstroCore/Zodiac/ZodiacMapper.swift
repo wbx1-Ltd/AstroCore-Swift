@@ -1,6 +1,6 @@
 import Foundation
 
-// Maps ecliptic longitude to zodiac sign
+/// Maps ecliptic longitude to zodiac sign
 enum ZodiacMapper {
     typealias Details = (
         sign: ZodiacSign,

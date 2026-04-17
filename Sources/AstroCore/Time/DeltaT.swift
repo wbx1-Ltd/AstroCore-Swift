@@ -1,8 +1,8 @@
 import Foundation
 
-// ΔT = TT - UT1 (seconds)
-// Historical ranges use published polynomial fits.
-// Modern and near-future ranges use interpolated official samples.
+/// ΔT = TT - UT1 (seconds)
+/// Historical ranges use published polynomial fits.
+/// Modern and near-future ranges use interpolated official samples.
 enum DeltaT {
     private static let firstHistoricSampleYear = DeltaTHistoricTable.samples[0].decimalYear
     private static let lastHistoricSampleYear = DeltaTHistoricTable.samples[DeltaTHistoricTable.samples.count - 1].decimalYear
@@ -49,7 +49,7 @@ enum DeltaT {
         samples: [(decimalYear: Double, deltaTSeconds: Double)]
     ) -> Double? {
         guard let first = samples.first, let last = samples.last,
-            y >= first.decimalYear, y <= last.decimalYear
+              y >= first.decimalYear, y <= last.decimalYear
         else {
             return nil
         }
@@ -92,7 +92,7 @@ enum DeltaT {
 
     private static func futureCubic(decimalYear y: Double) -> Double {
         let b = y - 2000.0
-        return b * b * b * 121.0 / 30_000_000.0
+        return b * b * b * 121.0 / 30000000.0
             + b * b / 1250.0
             + b * 521.0 / 3000.0
             + 64.0

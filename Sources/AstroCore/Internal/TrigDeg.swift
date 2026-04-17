@@ -1,6 +1,6 @@
 import Foundation
 
-// Degree-based trigonometric functions
+/// Degree-based trigonometric functions
 enum TrigDeg {
     @inline(__always)
     static func sin(_ degrees: Double) -> Double {

@@ -1,8 +1,7 @@
-import Testing
-import Foundation
-import Dispatch
-
 @testable import AstroCore
+import Dispatch
+import Foundation
+import Testing
 
 @Suite("Performance Benchmarks", .serialized)
 struct BenchmarkTests {
@@ -25,8 +24,8 @@ struct BenchmarkTests {
             try work()
         }
         let elapsedNanoseconds = DispatchTime.now().uptimeNanoseconds - start
-        let totalSeconds = Double(elapsedNanoseconds) / 1_000_000_000.0
-        let perCallMicroseconds = Double(elapsedNanoseconds) / Double(iterations) / 1_000.0
+        let totalSeconds = Double(elapsedNanoseconds) / 1000000000.0
+        let perCallMicroseconds = Double(elapsedNanoseconds) / Double(iterations) / 1000.0
         return (perCallMicroseconds, totalSeconds)
     }
 
@@ -75,7 +74,7 @@ struct BenchmarkTests {
             timeZoneIdentifier: "America/New_York"
         )
         let coord = try GeoCoordinate(latitude: 40.7128, longitude: -74.0060)
-        let iterations = 200_000
+        let iterations = 200000
         let result = try benchmark(iterations: iterations, warmup: 1000) {
             _ = try AstroCalculator.ascendant(for: moment, coordinate: coord)
         }
@@ -117,6 +116,6 @@ struct BenchmarkTests {
         }
         let perCallMs = result.perCallMicroseconds / 1000.0
         print("full natal chart (7 bodies + asc): \(formatMicroseconds(result.perCallMicroseconds)) µs/call (\(String(format: "%.2f", perCallMs)) ms)")
-        print("throughput: \(String(format: "%.0f", 1_000_000.0 / result.perCallMicroseconds)) charts/sec")
+        print("throughput: \(String(format: "%.0f", 1000000.0 / result.perCallMicroseconds)) charts/sec")
     }
 }

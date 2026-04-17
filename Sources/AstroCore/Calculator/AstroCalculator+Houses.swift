@@ -24,6 +24,20 @@ extension AstroCalculator {
         )
     }
 
+    /// Compute the 36 Gauquelin sectors.
+    ///
+    /// Sector numbering follows the Swiss Ephemeris convention:
+    /// sector 1 starts at the Ascendant and counts clockwise.
+    ///
+    /// Gauquelin sectors are undefined beyond the ecliptic polar circle and
+    /// therefore throw `AstroError.houseSystemUndefinedAtLatitude`.
+    public static func gauquelinSectors(
+        for moment: CivilMoment,
+        coordinate: GeoCoordinate
+    ) throws(AstroError) -> GauquelinResult {
+        try GauquelinEngine.compute(for: moment, coordinate: coordinate)
+    }
+
     /// Compute a full natal chart: planets + houses + angles.
     public static func natalChart(
         for moment: CivilMoment,

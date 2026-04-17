@@ -1,6 +1,6 @@
 import Foundation
 
-// Meeus Ch.7 — Julian Day Number
+/// Meeus Ch.7 — Julian Day Number
 enum JulianDay {
     /// J2000.0 epoch: 2000-01-01 12:00 TT = JD 2451545.0
     static let j2000: Double = 2451545.0

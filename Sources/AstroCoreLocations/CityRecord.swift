@@ -17,8 +17,8 @@ public struct CityRecord: Identifiable, Sendable, Hashable, Codable {
 
         let latitudeE5 = try container.decode(Int.self)
         let longitudeE5 = try container.decode(Int.self)
-        latitude = Double(latitudeE5) / 100_000.0
-        longitude = Double(longitudeE5) / 100_000.0
+        latitude = Double(latitudeE5) / 100000.0
+        longitude = Double(longitudeE5) / 100000.0
 
         timeZoneIdentifier = try container.decode(String.self)
     }
@@ -28,8 +28,8 @@ public struct CityRecord: Identifiable, Sendable, Hashable, Codable {
         try container.encode(id)
         try container.encode(name)
         try container.encode(countryCode)
-        try container.encode(Int((latitude * 100_000.0).rounded()))
-        try container.encode(Int((longitude * 100_000.0).rounded()))
+        try container.encode(Int((latitude * 100000.0).rounded()))
+        try container.encode(Int((longitude * 100000.0).rounded()))
         try container.encode(timeZoneIdentifier)
     }
 

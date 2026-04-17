@@ -17,13 +17,13 @@ func findPackageRoot() -> URL {
 
 func planetSwiftName(_ code: String) -> String {
     switch code {
-    case "ear": return "Earth"
-    case "mer": return "Mercury"
-    case "ven": return "Venus"
-    case "mar": return "Mars"
-    case "jup": return "Jupiter"
-    case "sat": return "Saturn"
-    default: return code.capitalized
+    case "ear": "Earth"
+    case "mer": "Mercury"
+    case "ven": "Venus"
+    case "mar": "Mars"
+    case "jup": "Jupiter"
+    case "sat": "Saturn"
+    default: code.capitalized
     }
 }
 

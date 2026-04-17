@@ -1,6 +1,6 @@
 import Foundation
 
-// City search index — loads the compact cities.json lazily
+/// City search index — loads the compact cities.json lazily
 public final class CityIndex: @unchecked Sendable {
     private struct SearchEntry {
         let city: CityRecord
@@ -34,7 +34,7 @@ public final class CityIndex: @unchecked Sendable {
             return
         }
         guard let data = try? Data(contentsOf: url),
-            let decoded = try? JSONDecoder().decode([CityRecord].self, from: data)
+              let decoded = try? JSONDecoder().decode([CityRecord].self, from: data)
         else {
             print("[AstroCoreLocations] Failed to decode cities.json")
             return

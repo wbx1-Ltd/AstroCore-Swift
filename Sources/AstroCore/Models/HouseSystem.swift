@@ -1,5 +1,5 @@
-// All 12-house systems returning 12 cusps.
-// Gauquelin 36-sector system is intentionally excluded (separate API in future).
+/// All supported 12-house systems returning 12 cusps.
+/// Gauquelin 36-sector sectors are exposed through a dedicated API.
 public enum HouseSystem: String, CaseIterable, Sendable, Hashable, Codable {
     // A. Equal division
     case equalASC
@@ -21,9 +21,11 @@ public enum HouseSystem: String, CaseIterable, Sendable, Hashable, Codable {
     case regiomontanus
     case morinus
     case topocentric
+    case horizontal
 
-    // E. Special
+    /// E. Special
     case meridian
+    case carter
 }
 
 extension HouseSystem {
@@ -56,7 +58,9 @@ extension HouseSystem {
         case .regiomontanus: "Regiomontanus"
         case .morinus: "Morinus"
         case .topocentric: "Topocentric"
-        case .meridian: "Meridian"
+        case .horizontal: "Horizontal / Azimuthal"
+        case .meridian: "Meridian / Axial Rotation"
+        case .carter: "Carter Poli-Equatorial"
         }
     }
 }

@@ -6,11 +6,11 @@ let package = Package(
     name: "AstroCore",
     platforms: [
         .iOS(.v15), .macOS(.v12), .tvOS(.v15),
-        .watchOS(.v8), .visionOS(.v1),
+        .watchOS(.v8), .visionOS(.v1)
     ],
     products: [
         .library(name: "AstroCore", targets: ["AstroCore"]),
-        .library(name: "AstroCoreLocations", targets: ["AstroCoreLocations"]),
+        .library(name: "AstroCoreLocations", targets: ["AstroCoreLocations"])
     ],
     targets: [
         .target(name: "AstroCore"),
@@ -27,6 +27,6 @@ let package = Package(
         .testTarget(
             name: "AstroCoreLocationsTests",
             dependencies: ["AstroCoreLocations"]
-        ),
+        )
     ]
 )
