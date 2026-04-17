@@ -1,6 +1,17 @@
 import Foundation
 
 public struct CivilMoment: Sendable, Hashable, Codable {
+    private struct LocalTimeRequest {
+        let year: Int
+        let month: Int
+        let day: Int
+        let hour: Int
+        let minute: Int
+        let second: Int
+        let timeZoneIdentifier: String
+        let repeatedTimeResolution: RepeatedTimeResolution
+    }
+
     public let year: Int // 1800...2100
     public let month: Int // 1...12
     public let day: Int // 1...31
@@ -8,6 +19,7 @@ public struct CivilMoment: Sendable, Hashable, Codable {
     public let minute: Int // 0...59
     public let second: Int // 0...59
     public let timeZoneIdentifier: String // IANA, e.g. "America/New_York"
+    public let repeatedTimeResolution: RepeatedTimeResolution
 
     private let cachedDecimalYear: Double
     private let utcYear: Int
@@ -29,7 +41,8 @@ public struct CivilMoment: Sendable, Hashable, Codable {
     public init(
         year: Int, month: Int, day: Int,
         hour: Int, minute: Int, second: Int = 0,
-        timeZoneIdentifier: String
+        timeZoneIdentifier: String,
+        repeatedTimeResolution: RepeatedTimeResolution = .reject
     ) throws(AstroError) {
         guard (1800...2100).contains(year) else {
             throw .unsupportedYearRange(year)
@@ -57,13 +70,16 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         }
 
         let utc = try Self.resolveUTCComponents(
-            year: year,
-            month: month,
-            day: day,
-            hour: hour,
-            minute: minute,
-            second: second,
-            timeZoneIdentifier: timeZoneIdentifier,
+            request: LocalTimeRequest(
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                second: second,
+                timeZoneIdentifier: timeZoneIdentifier,
+                repeatedTimeResolution: repeatedTimeResolution
+            ),
             timeZone: timeZone
         )
         // Use exact UTC fractional year for Delta T interpolation.
@@ -110,6 +126,7 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         self.minute = minute
         self.second = second
         self.timeZoneIdentifier = timeZoneIdentifier
+        self.repeatedTimeResolution = repeatedTimeResolution
         self.cachedDecimalYear = decimalYear
         self.utcYear = utc.year
         self.utcMonth = utc.month
@@ -165,6 +182,12 @@ public struct CivilMoment: Sendable, Hashable, Codable {
             && lhs.minute == rhs.minute
             && lhs.second == rhs.second
             && lhs.timeZoneIdentifier == rhs.timeZoneIdentifier
+            && lhs.utcYear == rhs.utcYear
+            && lhs.utcMonth == rhs.utcMonth
+            && lhs.utcDay == rhs.utcDay
+            && lhs.utcHour == rhs.utcHour
+            && lhs.utcMinute == rhs.utcMinute
+            && lhs.utcSecond == rhs.utcSecond
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -175,23 +198,69 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         hasher.combine(minute)
         hasher.combine(second)
         hasher.combine(timeZoneIdentifier)
+        hasher.combine(utcYear)
+        hasher.combine(utcMonth)
+        hasher.combine(utcDay)
+        hasher.combine(utcHour)
+        hasher.combine(utcMinute)
+        hasher.combine(utcSecond)
     }
 
     private enum CodingKeys: String, CodingKey {
         case year, month, day, hour, minute, second, timeZoneIdentifier
+        case repeatedTimeResolution
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self = try Self(
-            year: container.decode(Int.self, forKey: .year),
-            month: container.decode(Int.self, forKey: .month),
-            day: container.decode(Int.self, forKey: .day),
-            hour: container.decode(Int.self, forKey: .hour),
-            minute: container.decode(Int.self, forKey: .minute),
-            second: container.decode(Int.self, forKey: .second),
-            timeZoneIdentifier: container.decode(String.self, forKey: .timeZoneIdentifier)
-        )
+        let year = try container.decode(Int.self, forKey: .year)
+        let month = try container.decode(Int.self, forKey: .month)
+        let day = try container.decode(Int.self, forKey: .day)
+        let hour = try container.decode(Int.self, forKey: .hour)
+        let minute = try container.decode(Int.self, forKey: .minute)
+        let second = try container.decode(Int.self, forKey: .second)
+        let timeZoneIdentifier = try container.decode(String.self, forKey: .timeZoneIdentifier)
+
+        if let repeatedTimeResolution = try container.decodeIfPresent(
+            RepeatedTimeResolution.self,
+            forKey: .repeatedTimeResolution
+        ) {
+            self = try Self(
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                second: second,
+                timeZoneIdentifier: timeZoneIdentifier,
+                repeatedTimeResolution: repeatedTimeResolution
+            )
+            return
+        }
+
+        if let decoded = try? Self(
+            year: year,
+            month: month,
+            day: day,
+            hour: hour,
+            minute: minute,
+            second: second,
+            timeZoneIdentifier: timeZoneIdentifier,
+            repeatedTimeResolution: .reject
+        ) {
+            self = decoded
+        } else {
+            self = try Self(
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                second: second,
+                timeZoneIdentifier: timeZoneIdentifier,
+                repeatedTimeResolution: .firstOccurrence
+            )
+        }
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -203,16 +272,11 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         try container.encode(minute, forKey: .minute)
         try container.encode(second, forKey: .second)
         try container.encode(timeZoneIdentifier, forKey: .timeZoneIdentifier)
+        try container.encode(repeatedTimeResolution, forKey: .repeatedTimeResolution)
     }
 
     private static func resolveUTCComponents(
-        year: Int,
-        month: Int,
-        day: Int,
-        hour: Int,
-        minute: Int,
-        second: Int,
-        timeZoneIdentifier: String,
+        request: LocalTimeRequest,
         timeZone: TimeZone
     ) throws(AstroError) -> (
         year: Int,
@@ -226,25 +290,28 @@ public struct CivilMoment: Sendable, Hashable, Codable {
         calendar.timeZone = timeZone
 
         var components = DateComponents()
-        components.year = year
-        components.month = month
-        components.day = day
-        components.hour = hour
-        components.minute = minute
-        components.second = second
+        components.year = request.year
+        components.month = request.month
+        components.day = request.day
+        components.hour = request.hour
+        components.minute = request.minute
+        components.second = request.second
         components.calendar = calendar
         components.timeZone = timeZone
 
         // Reject DST gaps (spring-forward non-representable wall times)
         guard components.isValidDate(in: calendar) else {
             throw .invalidCivilMoment(
-                detail: "Local time is not representable in \(timeZoneIdentifier)"
+                detail: "Local time is not representable in \(request.timeZoneIdentifier)"
             )
         }
 
-        guard let date = calendar.date(from: components) else {
-            throw .dateConversionFailed
-        }
+        let date = try resolveLocalDate(
+            matching: components,
+            in: calendar,
+            timeZoneIdentifier: request.timeZoneIdentifier,
+            repeatedTimeResolution: request.repeatedTimeResolution
+        )
 
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = utcTimeZone
@@ -270,6 +337,68 @@ public struct CivilMoment: Sendable, Hashable, Codable {
             hour: utcHour,
             minute: utcMinute,
             second: utcSecond
+        )
+    }
+
+    private static func resolveLocalDate(
+        matching components: DateComponents,
+        in calendar: Calendar,
+        timeZoneIdentifier: String,
+        repeatedTimeResolution: RepeatedTimeResolution
+    ) throws(AstroError) -> Date {
+        guard let first = exactLocalDate(
+            matching: components,
+            in: calendar,
+            repeatedTimePolicy: .first
+        ), let last = exactLocalDate(
+            matching: components,
+            in: calendar,
+            repeatedTimePolicy: .last
+        ) else {
+            throw .dateConversionFailed
+        }
+
+        guard first != last else {
+            return first
+        }
+
+        switch repeatedTimeResolution {
+        case .reject:
+            throw .invalidCivilMoment(
+                detail: """
+                Local time is ambiguous in \(timeZoneIdentifier); pass repeatedTimeResolution \
+                to choose the first or last occurrence
+                """
+            )
+        case .firstOccurrence:
+            return first
+        case .lastOccurrence:
+            return last
+        }
+    }
+
+    private static func exactLocalDate(
+        matching components: DateComponents,
+        in calendar: Calendar,
+        repeatedTimePolicy: Calendar.RepeatedTimePolicy
+    ) -> Date? {
+        var dayComponents = DateComponents()
+        dayComponents.year = components.year
+        dayComponents.month = components.month
+        dayComponents.day = components.day
+        dayComponents.calendar = calendar
+        dayComponents.timeZone = components.timeZone
+
+        guard let dayStart = calendar.date(from: dayComponents) else {
+            return nil
+        }
+
+        return calendar.nextDate(
+            after: dayStart.addingTimeInterval(-1),
+            matching: components,
+            matchingPolicy: .strict,
+            repeatedTimePolicy: repeatedTimePolicy,
+            direction: .forward
         )
     }
 

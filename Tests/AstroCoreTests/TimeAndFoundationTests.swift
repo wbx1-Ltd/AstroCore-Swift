@@ -129,8 +129,13 @@ struct TimeAndFoundationTests {
             )
         }
 
-        #expect(throws: Never.self) {
-            _ = try CivilMoment(
+        #expect(throws: AstroError.invalidCivilMoment(
+            detail: """
+            Local time is ambiguous in America/New_York; pass repeatedTimeResolution \
+            to choose the first or last occurrence
+            """
+        )) {
+            try CivilMoment(
                 year: 2000,
                 month: 10,
                 day: 29,
@@ -140,6 +145,40 @@ struct TimeAndFoundationTests {
                 timeZoneIdentifier: "America/New_York"
             )
         }
+    }
+
+    @Test func civilMomentAllowsExplicitRepeatedTimeResolution() throws {
+        let first = try CivilMoment(
+            year: 2000,
+            month: 10,
+            day: 29,
+            hour: 1,
+            minute: 30,
+            second: 0,
+            timeZoneIdentifier: "America/New_York",
+            repeatedTimeResolution: .firstOccurrence
+        )
+        let last = try CivilMoment(
+            year: 2000,
+            month: 10,
+            day: 29,
+            hour: 1,
+            minute: 30,
+            second: 0,
+            timeZoneIdentifier: "America/New_York",
+            repeatedTimeResolution: .lastOccurrence
+        )
+
+        let firstUTC = try first.toUTCComponents()
+        let lastUTC = try last.toUTCComponents()
+        #expect(firstUTC.year == 2000 && lastUTC.year == 2000)
+        #expect(firstUTC.month == 10 && lastUTC.month == 10)
+        #expect(firstUTC.day == 29 && lastUTC.day == 29)
+        #expect(firstUTC.hour == 5)
+        #expect(lastUTC.hour == 6)
+        #expect(firstUTC.minute == 30 && lastUTC.minute == 30)
+        #expect(first != last)
+        #expect(first.hashValue != last.hashValue)
     }
 
     @Test func civilMomentValidatesInputsAndSupportsCodableHashable() throws {
@@ -189,6 +228,29 @@ struct TimeAndFoundationTests {
         #expect(original == decoded)
         #expect(original.hashValue == decoded.hashValue)
         #expect(abs(original.decimalYear - 2000.4973) < 0.001)
+
+        let ambiguous = try CivilMoment(
+            year: 2000,
+            month: 10,
+            day: 29,
+            hour: 1,
+            minute: 30,
+            second: 0,
+            timeZoneIdentifier: "America/New_York",
+            repeatedTimeResolution: .lastOccurrence
+        )
+        let ambiguousPayload = try JSONEncoder().encode(ambiguous)
+        let ambiguousDecoded = try JSONDecoder().decode(CivilMoment.self, from: ambiguousPayload)
+        #expect(ambiguous == ambiguousDecoded)
+
+        let legacyPayload = Data(
+            #"{"year":2000,"month":10,"day":29,"hour":1,"minute":30,"second":0,"timeZoneIdentifier":"America/New_York"}"#
+                .utf8
+        )
+        let legacyDecoded = try JSONDecoder().decode(CivilMoment.self, from: legacyPayload)
+        let legacyUTC = try legacyDecoded.toUTCComponents()
+        #expect(legacyUTC.hour == 5)
+        #expect(legacyUTC.minute == 30)
     }
 
     @Test func siderealTimeMatchesMomentCacheAndLongitudeWrapping() throws {
