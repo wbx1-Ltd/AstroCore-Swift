@@ -29,6 +29,7 @@ Sub-arcsecond accuracy for all bodies, zero dependencies, thread-safe.
   - [🌙 Moon Sign](#-moon-sign)
   - [🪐 Planet Positions](#-planet-positions)
   - [♈ Ascendant (Rising Sign)](#-ascendant-rising-sign)
+  - [🏠 House Systems](#-house-systems)
   - [📊 Batch Natal Chart](#-batch-natal-chart)
   - [🌐 City Database (Optional)](#-city-database-optional)
   - [🔧 Low-Level API](#-low-level-api)
@@ -55,10 +56,11 @@ Sub-arcsecond accuracy for all bodies, zero dependencies, thread-safe.
 | | Feature | Description |
 |-|---------|-------------|
 | ♈ | **Ascendant (ASC)** | Sidereal time + nutation + true obliquity, global coordinates |
+| 🏠 | **House Systems** | 16 twelve-house systems plus independent Gauquelin sectors, with angles and polar-latitude handling |
 | ☀️ | **Sun Sign** | VSOP87D + FK5 correction + aberration + nutation |
 | 🌙 | **Moon Sign** | ELP-2000/82 (120 terms) + residual correction + nutation |
 | 🪐 | **Planet Signs** | Mercury through Saturn — light-time + FK5 + gravitational deflection + residual correction |
-| 📊 | **Batch Natal Chart** | Compute ASC + all body positions in one call |
+| 📊 | **Batch Natal Chart** | Compute planets, ASC, houses, and angles in one call |
 | 🌐 | **City Database** | 33,000+ global cities with coordinates & timezones (optional module) |
 | 🧵 | **Thread-Safe** | Full `Sendable` conformance |
 | 🚫 | **Zero Dependencies** | Pure Swift, no third-party libraries |
@@ -78,7 +80,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/wbx1-Ltd/AstroCore-Swift.git", from: "1.2.0"),
+    .package(url: "https://github.com/wbx1-Ltd/AstroCore-Swift.git", from: "2.0.0"),
 ]
 ```
 
@@ -114,6 +116,10 @@ Or in Xcode: **File → Add Package Dependencies…** → paste the URL above.
 ## 🚀 Usage
 
 `AstroCore` only requires coordinates (`GeoCoordinate`) and a timezone (`timeZoneIdentifier`) — no city data needed.
+
+If a local wall-clock time falls inside a DST fall-back repeat hour, pass
+`repeatedTimeResolution: .firstOccurrence` or `.lastOccurrence` to select the
+exact instant explicitly.
 
 ```swift
 import AstroCore
@@ -175,6 +181,53 @@ print(asc.eclipticLongitude)     // 240.93°
 print(asc.degreeInSign)          // 0.93°
 ```
 
+### 🏠 House Systems
+
+```swift
+let houses = try AstroCalculator.houses(
+    for: moment,
+    coordinate: coord,
+    system: .placidus,
+    polarFallback: .porphyry
+)
+
+print(houses.requestedSystem.displayName)  // "Placidus"
+print(houses.resolvedSystem.displayName)   // "Placidus"
+print(houses.cusps[0].sign.name)           // House 1 cusp sign
+print(houses.angles.ascendant)             // ASC longitude
+print(houses.angles.midheaven)             // MC longitude
+```
+
+Supported systems:
+`.equalASC`, `.equalMC`, `.wholeSign`, `.vehlow`, `.porphyry`, `.sripati`,
+`.placidus`, `.koch`, `.alcabitius`, `.campanus`, `.regiomontanus`,
+`.morinus`, `.topocentric`, `.horizontal`, `.meridian`, `.carter`
+
+`HouseSystem.meridian` is the published API for Meridian / Axial Rotation /
+Zariel houses.
+
+Polar fallback strategies:
+`.porphyry` (default), `.equalASC`, `.wholeSign`, `.error`
+
+Independent Gauquelin sectors:
+
+```swift
+let sectors = try AstroCalculator.gauquelinSectors(
+    for: moment,
+    coordinate: coord
+)
+
+print(sectors.sectors[0].number)                  // 1
+print(sectors.sectors[0].eclipticLongitude)       // sector 1 = ASC
+print(sectors.sectors[9].eclipticLongitude)       // sector 10 = MC
+print(sectors.sectors[18].eclipticLongitude)      // sector 19 = DSC
+print(sectors.sectors[27].eclipticLongitude)      // sector 28 = IC
+```
+
+Not part of 2.0.0 yet:
+`Krusinski-Pisa-Goelzer`, `APC`, `Sunshine (Treindl)`,
+`Sunshine (Makransky)`, `Pullen SD`, `Pullen SR`
+
 ### 📊 Batch Natal Chart
 
 ```swift
@@ -198,6 +251,19 @@ print("ASC: \(natal.ascendant!.sign.emoji) \(natal.ascendant!.sign.name)")
 for (body, pos) in natal.bodies {
     print("\(pos.sign.emoji) \(body) in \(pos.sign.name) \(pos.degreeInSign)°")
 }
+```
+
+If you also want houses and angles in the same response:
+
+```swift
+let chart = try AstroCalculator.natalChart(
+    for: moment,
+    coordinate: coord,
+    system: .placidus
+)
+
+print(chart.houses.angles.vertex ?? .nan)
+print(chart.houses.cusps[9].eclipticLongitude)  // House 10 cusp / MC sector
 ```
 
 ### 🌐 City Database (Optional)
@@ -277,7 +343,7 @@ Release build, Apple Silicon (M-series):
 | Moon position | **0.9 µs** |
 | Sun position | **9 µs** |
 | Single planet | **55–170 µs** |
-| Full natal chart (7 bodies + ASC) | **630 µs** |
+| Full natal chart (7 bodies + ASC + houses) | **630 µs** |
 
 > Throughput: ~**1,600 charts/sec**.
 
@@ -291,16 +357,18 @@ Release build, Apple Silicon (M-series):
 
 | Metric | Value |
 |--------|-------|
-| Test functions | **122** |
-| Test suites | **23** |
+| Test cases | **62** |
+| Test suites | **9** |
 
 Validation:
 
 - ✅ **JPL Horizons (DE440/441)** — multi-epoch sub-arcsecond verification, 1850–2100
 - ✅ **Solstice cross-validation** — 2000 summer & 2024 winter solstice error < 1.5″
 - ✅ **8 global cities** — NYC, London, Tokyo, Berlin, Sydney, Mumbai, LA, Helsinki
+- ✅ **House systems** — 16 systems checked for cusp validity, angle alignment, and polar fallback behavior
+- ✅ **Gauquelin sectors** — independent 36-sector model with clockwise numbering and baseline coverage
 - ✅ **Edge cases** — year boundaries (1800/2100), polar latitudes, sign boundaries
-- ✅ **Regression baselines** — automatic numerical drift detection (< 10⁻¹⁰°)
+- ✅ **Regression baselines** — automatic numerical drift detection in CI and local release verification (< 10⁻¹⁰°)
 
 <div align="right">
 
@@ -314,15 +382,24 @@ Validation:
 
 | Type | Description |
 |------|-------------|
-| `AstroCalculator` | Main entry — Sun/Moon/planet/ascendant/natal chart |
-| `CivilMoment` | Civil time (year/month/day/hour/minute/second + IANA timezone) |
-| `GeoCoordinate` | Geographic coordinate with extreme latitude validation |
+| `AstroCalculator` | Main entry — Sun/Moon/planet/ascendant/house/natal chart |
+| `CivilMoment` | Civil time (year/month/day/hour/minute/second + IANA timezone, with explicit repeated-time resolution when needed) |
+| `RepeatedTimeResolution` | DST fall-back ambiguity policy: reject, first occurrence, or last occurrence |
+| `GeoCoordinate` | Geographic coordinate with range-checked latitude and longitude |
 | `CelestialBody` | Body enum — `.sun`, `.moon`, `.mercury`, `.venus`, `.mars`, `.jupiter`, `.saturn` |
 | `ZodiacSign` | 12 zodiac signs with name, emoji, start longitude, `contains()` |
 | `CelestialPosition` | Body position (ecliptic longitude/latitude, sign, degree in sign) |
-| `AscendantResult` | Ascendant (ecliptic longitude, sign, sidereal time, obliquity) |
-| `NatalPositions` | Batch result (ascendant + body dictionary) |
-| `AstroError` | Typed errors (invalid coordinate, unsupported year, extreme latitude) |
+| `AscendantResult` | Ascendant (ecliptic longitude, sign, degree in sign, boundary flag) |
+| `NatalPositions` | Batch result (optional ascendant + body dictionary) |
+| `NatalChart` | Full chart payload (positions + houses + context) |
+| `HouseSystem` | 16 supported 12-house systems with display metadata |
+| `HouseResult` | Cusps + angles + requested/resolved system metadata |
+| `HouseCusp` | One cusp entry (`1...12`) with longitude/sign metadata |
+| `GauquelinResult` | Independent 36-sector result with shared chart angles |
+| `GauquelinSector` | One clockwise Gauquelin sector boundary (`1...36`) |
+| `Angles` | ASC / MC / DSC / IC and optional vertex |
+| `PolarFallback` | Fallback strategy when a house system is undefined at polar latitudes |
+| `AstroError` | Typed errors (invalid coordinate, unsupported year, missing coordinate, polar fallback error) |
 
 ### AstroCoreLocations (Optional)
 
@@ -343,6 +420,8 @@ Validation:
 |-|------|-------|
 | 📆 | Year range | 1800 — 2100 (301 years) |
 | 🪐 | Bodies | Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn |
+| 🏠 | House systems | 16 systems: Equal (ASC/MC), Whole Sign, Vehlow, Porphyry, Sripati, Placidus, Koch, Alcabitius, Campanus, Regiomontanus, Morinus, Topocentric, Horizontal, Meridian / Axial Rotation, Carter |
+| 📈 | Gauquelin sectors | 36-sector statistical model via dedicated API |
 | 🖥️ | Platforms | iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · visionOS 1+ |
 | 🔧 | Swift | 6.0+ |
 
@@ -359,6 +438,7 @@ Validation:
 | **Jean Meeus, _Astronomical Algorithms_ (2nd Ed, 1998)** | Julian Day, ΔT, sidereal time, nutation, ascendant formulas |
 | **VSOP87D** (Bretagnon & Francou, 1988) | Heliocentric ecliptic coordinates (full series) |
 | **ELP-2000/82** (Chapront-Touzé & Chapront, 1983) | Lunar longitude/latitude (120-term truncated series) |
+| **Classical house-system geometry** | Equal, Whole Sign, Porphyry, Sripati, semi-arc, and great-circle house constructions |
 | **IAU 1980 Nutation Model** | 63-term nutation in longitude/obliquity |
 | **Laskar (1986)** | Mean obliquity 10th-degree polynomial |
 | **Espenak & Meeus (2006)** | ΔT piecewise polynomials (1800–2100) |
@@ -373,6 +453,12 @@ Validation:
 
 Copyright &copy; 2026-present [Babywbx][profile-link].<br/>
 This project is [MIT](./LICENSE) licensed.
+
+`AstroCoreLocations` bundles derived city data generated from GeoNames `cities15000`.
+GeoNames states that its downloadable geographical database is available under CC BY 4.0,
+so if you redistribute or surface this packaged dataset, review the attribution terms:
+[GeoNames export](https://download.geonames.org/export/dump/) and
+[GeoNames about/license](https://www.geonames.org/about.html).
 
 <!-- LINK GROUP -->
 

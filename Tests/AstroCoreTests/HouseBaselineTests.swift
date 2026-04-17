@@ -2,10 +2,10 @@
 import Foundation
 import Testing
 
-@Suite("Swiss House Verification")
-struct SwissHouseVerificationTests {
-    @Test func implementedHouseSystemsMatchSwissEphemerisWhenEnabled() throws {
-        guard ProcessInfo.processInfo.environment["ASTROCORE_ENABLE_SWISS_VERIFICATION"] == "1" else {
+@Suite("House Baselines")
+struct HouseBaselineTests {
+    @Test func implementedHouseSystemsMatchBaselinesWhenEnabled() throws {
+        guard ProcessInfo.processInfo.environment["ASTROCORE_ENABLE_BASELINE_VERIFICATION"] == "1" else {
             return
         }
 
@@ -15,7 +15,7 @@ struct SwissHouseVerificationTests {
             AstroCoreTestSupport.paris1995(),
             AstroCoreTestSupport.sydney2010()
         ]
-        let snapshots = try AstroCoreTestSupport.swissHouseSnapshots(
+        let snapshots = try AstroCoreTestSupport.referenceHouseSnapshots(
             fixtures: fixtures,
             systems: HouseSystem.allCases,
             includeGauquelin: true
@@ -23,13 +23,15 @@ struct SwissHouseVerificationTests {
 
         for fixture in fixtures {
             guard let snapshot = snapshots[fixture.name] else {
-                Issue.record("Missing Swiss snapshot for \(fixture.name)")
+                Issue.record("Missing reference snapshot for \(fixture.name)")
                 continue
             }
 
             for system in HouseSystem.allCases {
-                guard let expected = snapshot.systems[AstroCoreTestSupport.swissLetter(for: system)] else {
-                    Issue.record("Missing Swiss data for \(system) at \(fixture.name)")
+                guard let expected = snapshot.systems[
+                    AstroCoreTestSupport.referenceSystemCode(for: system)
+                ] else {
+                    Issue.record("Missing reference data for \(system) at \(fixture.name)")
                     continue
                 }
 

@@ -29,6 +29,7 @@
   - [🌙 月亮星座](#-月亮星座)
   - [🪐 行星位置](#-行星位置)
   - [♈ 上升星座 (ASC)](#-上升星座-asc)
+  - [🏠 宫位系统](#-宫位系统)
   - [📊 批量本命盘](#-批量本命盘)
   - [🌐 城市数据库（可选）](#-城市数据库可选)
   - [🔧 底层 API](#-底层-api)
@@ -55,10 +56,11 @@
 | | 功能 | 说明 |
 |-|------|------|
 | ♈ | **上升星座 (ASC)** | 基于恒星时 + 章动 + 真黄赤交角，支持全球坐标 |
+| 🏠 | **宫位系统** | 16 种十二宫系统 + 独立 Gauquelin 36 扇区，含四轴与高纬度处理 |
 | ☀️ | **太阳星座** | VSOP87D + FK5 修正 + 光行差 + 章动 |
 | 🌙 | **月亮星座** | ELP-2000/82（120 项）+ 残差修正 + 章动 |
 | 🪐 | **行星星座** | 水金火木土五大行星 — 光行时 + FK5 + 引力偏折 + 残差修正 |
-| 📊 | **批量本命盘** | 一次计算 ASC + 全部天体位置 |
+| 📊 | **批量本命盘** | 一次计算天体、ASC、宫位与四轴 |
 | 🌐 | **城市数据库** | 33,000+ 全球城市坐标与时区（可选模块） |
 | 🧵 | **线程安全** | 全面遵循 `Sendable` |
 | 🚫 | **零依赖** | 纯 Swift，无第三方库 |
@@ -78,7 +80,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/wbx1-Ltd/AstroCore-Swift.git", from: "1.2.0"),
+    .package(url: "https://github.com/wbx1-Ltd/AstroCore-Swift.git", from: "2.0.0"),
 ]
 ```
 
@@ -114,6 +116,10 @@ dependencies: [
 ## 🚀 使用
 
 `AstroCore` 只需要坐标 (`GeoCoordinate`) 和时区 (`timeZoneIdentifier`) 即可完成所有天文计算，不依赖任何城市数据。
+
+如果本地墙上时间落在夏令时回拨产生的重复小时内，请额外传入
+`repeatedTimeResolution: .firstOccurrence` 或 `.lastOccurrence`，
+显式指定要使用的真实时刻。
 
 ```swift
 import AstroCore
@@ -175,6 +181,52 @@ print(asc.eclipticLongitude)     // 240.93°
 print(asc.degreeInSign)          // 0.93°
 ```
 
+### 🏠 宫位系统
+
+```swift
+let houses = try AstroCalculator.houses(
+    for: moment,
+    coordinate: coord,
+    system: .placidus,
+    polarFallback: .porphyry
+)
+
+print(houses.requestedSystem.displayName)  // "Placidus"
+print(houses.resolvedSystem.displayName)   // "Placidus"
+print(houses.cusps[0].sign.name)           // 第一宫宫头所属星座
+print(houses.angles.ascendant)             // ASC 黄经
+print(houses.angles.midheaven)             // MC 黄经
+```
+
+支持的宫位系统：
+`.equalASC`、`.equalMC`、`.wholeSign`、`.vehlow`、`.porphyry`、`.sripati`、
+`.placidus`、`.koch`、`.alcabitius`、`.campanus`、`.regiomontanus`、
+`.morinus`、`.topocentric`、`.horizontal`、`.meridian`、`.carter`
+
+`HouseSystem.meridian` 是 Meridian / Axial Rotation / Zariel 的统一公开入口。
+
+高纬度 fallback 策略：
+`.porphyry`（默认）、`.equalASC`、`.wholeSign`、`.error`
+
+独立的 Gauquelin 36 扇区 API：
+
+```swift
+let sectors = try AstroCalculator.gauquelinSectors(
+    for: moment,
+    coordinate: coord
+)
+
+print(sectors.sectors[0].number)                  // 1
+print(sectors.sectors[0].eclipticLongitude)       // sector 1 = ASC
+print(sectors.sectors[9].eclipticLongitude)       // sector 10 = MC
+print(sectors.sectors[18].eclipticLongitude)      // sector 19 = DSC
+print(sectors.sectors[27].eclipticLongitude)      // sector 28 = IC
+```
+
+2.0.0 暂不支持：
+`Krusinski-Pisa-Goelzer`、`APC`、`Sunshine (Treindl)`、
+`Sunshine (Makransky)`、`Pullen SD`、`Pullen SR`
+
 ### 📊 批量本命盘
 
 ```swift
@@ -198,6 +250,19 @@ print("ASC: \(natal.ascendant!.sign.emoji) \(natal.ascendant!.sign.name)")
 for (body, pos) in natal.bodies {
     print("\(pos.sign.emoji) \(body) in \(pos.sign.name) \(pos.degreeInSign)°")
 }
+```
+
+如果你还想一次拿到宫位和四轴，可以直接用：
+
+```swift
+let chart = try AstroCalculator.natalChart(
+    for: moment,
+    coordinate: coord,
+    system: .placidus
+)
+
+print(chart.houses.angles.vertex ?? .nan)
+print(chart.houses.cusps[9].eclipticLongitude)  // 第十宫宫头 / MC 象限
 ```
 
 ### 🌐 城市数据库（可选）
@@ -277,7 +342,7 @@ Release 模式，Apple Silicon（M-series）：
 | 月亮位置 | **0.9 µs** |
 | 太阳位置 | **9 µs** |
 | 单颗行星 | **55–170 µs** |
-| 完整星盘（7 天体 + ASC） | **630 µs** |
+| 完整星盘（7 天体 + ASC + 宫位） | **630 µs** |
 
 > 吞吐量约 **1,600 张星盘/秒**。
 
@@ -291,16 +356,18 @@ Release 模式，Apple Silicon（M-series）：
 
 | 指标 | 数值 |
 |------|------|
-| 测试函数 | **122** |
-| 测试套件 | **23** |
+| 测试用例 | **62** |
+| 测试套件 | **9** |
 
 验证方式：
 
 - ✅ **JPL Horizons (DE440/441)** — 1850–2100 多历元亚角秒级验证
 - ✅ **至日交叉验证** — 2000 夏至、2024 冬至误差 < 1.5″
 - ✅ **全球 8 城市** — 纽约、伦敦、东京、柏林、悉尼、孟买、洛杉矶、赫尔辛基
+- ✅ **宫位系统** — 16 种系统覆盖宫头有效性、四轴对齐与高纬 fallback
+- ✅ **Gauquelin 扇区** — 独立 36 扇区模型，覆盖顺时针编号与 baseline
 - ✅ **极端边界** — 年份边界(1800/2100)、极地纬度、星座交界
-- ✅ **回归基准** — 每次变更自动检测数值漂移（< 10⁻¹⁰°）
+- ✅ **回归基准** — 在 CI 和本地 release 校验中自动检测数值漂移（< 10⁻¹⁰°）
 
 <div align="right">
 
@@ -314,15 +381,24 @@ Release 模式，Apple Silicon（M-series）：
 
 | 类型 | 说明 |
 |------|------|
-| `AstroCalculator` | 主入口 — 太阳/月亮/行星/上升星座/本命盘 |
-| `CivilMoment` | 民用时间（年月日时分秒 + IANA 时区） |
-| `GeoCoordinate` | 地理坐标，含极端纬度验证 |
+| `AstroCalculator` | 主入口 — 太阳/月亮/行星/上升星座/宫位/本命盘 |
+| `CivilMoment` | 民用时间（年月日时分秒 + IANA 时区，必要时可显式指定重复小时的解析策略） |
+| `RepeatedTimeResolution` | 夏令时回拨重复小时的解析策略：拒绝、第一次出现或最后一次出现 |
+| `GeoCoordinate` | 地理坐标（纬度/经度范围校验） |
 | `CelestialBody` | 天体枚举 — `.sun`, `.moon`, `.mercury`, `.venus`, `.mars`, `.jupiter`, `.saturn` |
 | `ZodiacSign` | 黄道十二宫（名称、emoji、起始经度、`contains()`） |
 | `CelestialPosition` | 天体位置（黄经、黄纬、星座、度数） |
-| `AscendantResult` | 上升星座结果（黄经、星座、恒星时、黄赤交角） |
-| `NatalPositions` | 批量结果（上升 + 天体字典） |
-| `AstroError` | 类型化错误（坐标无效、年份越界、极端纬度） |
+| `AscendantResult` | 上升星座结果（黄经、星座、星座内度数、边界标记） |
+| `NatalPositions` | 批量结果（可选 ASC + 天体字典） |
+| `NatalChart` | 完整星盘结果（positions + houses + context） |
+| `HouseSystem` | 16 种十二宫系统及其显示元数据 |
+| `HouseResult` | 宫头、四轴、请求/实际系统等结果集合 |
+| `HouseCusp` | 单个宫头（`1...12`）及其经度/星座信息 |
+| `GauquelinResult` | 独立 36 扇区结果，复用同一组四轴 |
+| `GauquelinSector` | 单个 Gauquelin 扇区边界（`1...36`，顺时针编号） |
+| `Angles` | ASC / MC / DSC / IC 与可选 Vertex |
+| `PolarFallback` | 极地纬度下宫位系统不可用时的 fallback 策略 |
+| `AstroError` | 类型化错误（坐标无效、年份越界、缺少坐标、高纬宫位错误） |
 
 ### AstroCoreLocations（可选）
 
@@ -343,6 +419,8 @@ Release 模式，Apple Silicon（M-series）：
 |-|------|------|
 | 📆 | 年份 | 1800 — 2100（301 年） |
 | 🪐 | 天体 | 太阳、月亮、水星、金星、火星、木星、土星 |
+| 🏠 | 宫位系统 | 16 种：Equal (ASC/MC)、Whole Sign、Vehlow、Porphyry、Sripati、Placidus、Koch、Alcabitius、Campanus、Regiomontanus、Morinus、Topocentric、Horizontal、Meridian / Axial Rotation、Carter |
+| 📈 | Gauquelin 扇区 | 36 扇区统计模型，使用独立 API |
 | 🖥️ | 平台 | iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · visionOS 1+ |
 | 🔧 | Swift | 6.0+ |
 
@@ -359,6 +437,7 @@ Release 模式，Apple Silicon（M-series）：
 | **Jean Meeus, _Astronomical Algorithms_ (2nd Ed, 1998)** | 儒略日、ΔT、恒星时、章动、上升星座公式 |
 | **VSOP87D** (Bretagnon & Francou, 1988) | 行星日心黄道球坐标（完整级数） |
 | **ELP-2000/82** (Chapront-Touzé & Chapront, 1983) | 月球黄经/黄纬（120 项截断级数） |
+| **传统宫位几何方法** | Equal、Whole Sign、Porphyry、Sripati、semi-arc、great-circle 等宫位构造 |
 | **IAU 1980 章动模型** | 63 项章动黄经/黄赤交角修正 |
 | **Laskar (1986)** | 平黄赤交角 10 阶多项式 |
 | **Espenak & Meeus (2006)** | ΔT 分段多项式（1800–2100） |
@@ -373,6 +452,12 @@ Release 模式，Apple Silicon（M-series）：
 
 Copyright &copy; 2026-present [Babywbx][profile-link].<br/>
 本项目基于 [MIT](./LICENSE) 许可证发布。
+
+`AstroCoreLocations` 打包的城市数据由 GeoNames `cities15000` 派生生成。
+GeoNames 官方目前将其可下载地理数据库标注为 CC BY 4.0，因此如果你要分发
+或在产品中展示这份数据，发版前请同步检查归属要求：
+[GeoNames 导出页面](https://download.geonames.org/export/dump/) 与
+[GeoNames 关于/许可说明](https://www.geonames.org/about.html)。
 
 <!-- LINK GROUP -->
 

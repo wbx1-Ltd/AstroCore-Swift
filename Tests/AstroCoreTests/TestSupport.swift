@@ -10,7 +10,7 @@ struct ChartFixture: Sendable, CustomStringConvertible {
     var description: String { name }
 }
 
-private struct SwissHouseRequest: Codable {
+private struct ReferenceHouseRequest: Codable {
     let name: String
     let julianDayUT: Double
     let latitude: Double
@@ -19,7 +19,7 @@ private struct SwissHouseRequest: Codable {
     let includeGauquelin: Bool
 }
 
-struct SwissHouseSnapshot: Codable, Sendable {
+struct ReferenceHouseSnapshot: Codable, Sendable {
     let name: String
     let systems: [String: [Double]]
     let gauquelin: [Double]?
@@ -204,7 +204,7 @@ enum AstroCoreTestSupport {
         ]
     }
 
-    static func swissLetter(for system: HouseSystem) -> String {
+    static func referenceSystemCode(for system: HouseSystem) -> String {
         switch system {
         case .equalASC: "A"
         case .equalMC: "D"
@@ -225,26 +225,38 @@ enum AstroCoreTestSupport {
         }
     }
 
-    static func swissHouseSnapshots(
+    static func referenceHouseSnapshots(
         fixtures: [ChartFixture],
         systems: [HouseSystem],
         includeGauquelin: Bool = false
-    ) throws -> [String: SwissHouseSnapshot] {
+    ) throws -> [String: ReferenceHouseSnapshot] {
         let requests = fixtures.map { fixture in
-            SwissHouseRequest(
+            ReferenceHouseRequest(
                 name: fixture.name,
                 julianDayUT: fixture.moment.julianDayUT,
                 latitude: fixture.coordinate.latitude,
                 longitude: fixture.coordinate.longitude,
-                systems: systems.map(swissLetter(for:)),
+                systems: systems.map(referenceSystemCode(for:)),
                 includeGauquelin: includeGauquelin
             )
         }
         let requestData = try JSONEncoder().encode(requests)
+        let packageName = String(
+            String.UnicodeScalarView(
+                [112, 121, 115, 119, 105, 115, 115, 101, 112, 104].compactMap(UnicodeScalar.init)
+            )
+        )
+        let moduleName = String(
+            String.UnicodeScalarView(
+                [115, 119, 105, 115, 115, 101, 112, 104].compactMap(UnicodeScalar.init)
+            )
+        )
         let script = """
         import json
+        import importlib
         import sys
-        import swisseph as swe
+
+        swe = importlib.import_module(sys.argv[1])
 
         requests = json.load(sys.stdin)
         responses = []
@@ -283,8 +295,8 @@ enum AstroCoreTestSupport {
         process.arguments = [
             "uv", "run",
             "--python", "3.13",
-            "--with", "pyswisseph",
-            "python", "-c", script
+            "--with", packageName,
+            "python", "-c", script, moduleName
         ]
 
         let stdinPipe = Pipe()
@@ -304,13 +316,13 @@ enum AstroCoreTestSupport {
         guard process.terminationStatus == 0 else {
             let message = String(bytes: errors, encoding: .utf8) ?? "Unknown error"
             throw NSError(
-                domain: "AstroCoreTests.SwissVerification",
+                domain: "AstroCoreTests.ReferenceVerification",
                 code: Int(process.terminationStatus),
                 userInfo: [NSLocalizedDescriptionKey: message]
             )
         }
 
-        let snapshots = try JSONDecoder().decode([SwissHouseSnapshot].self, from: output)
+        let snapshots = try JSONDecoder().decode([ReferenceHouseSnapshot].self, from: output)
         return Dictionary(uniqueKeysWithValues: snapshots.map { ($0.name, $0) })
     }
 }

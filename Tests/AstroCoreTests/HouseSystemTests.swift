@@ -365,7 +365,7 @@ struct HouseSystemTests {
         AstroCoreTestSupport.expectCuspPartition(horizontal.cusps)
     }
 
-    @Test func horizontalMatchesSwissReferenceFixture() throws {
+    @Test func horizontalMatchesReferenceFixture() throws {
         let fixture = try AstroCoreTestSupport.paris1995()
         let horizontal = try AstroCalculator.houses(
             for: fixture.moment,
@@ -427,7 +427,7 @@ struct HouseSystemTests {
         }
     }
 
-    @Test func carterMatchesSwissReferenceFixture() throws {
+    @Test func carterMatchesReferenceFixture() throws {
         let fixture = try AstroCoreTestSupport.paris1995()
         let carter = try AstroCalculator.houses(
             for: fixture.moment,
@@ -445,7 +445,7 @@ struct HouseSystemTests {
         }
     }
 
-    @Test func meridianMatchesSwissAxialRotationReferenceFixture() throws {
+    @Test func meridianMatchesAxialRotationReferenceFixture() throws {
         let fixture = try AstroCoreTestSupport.paris1995()
         let meridian = try AstroCalculator.houses(
             for: fixture.moment,
@@ -594,7 +594,7 @@ struct HouseSystemTests {
         )
     }
 
-    @Test func gauquelinMatchesSwissReferenceFixture() throws {
+    @Test func gauquelinMatchesReferenceFixture() throws {
         let fixture = try AstroCoreTestSupport.paris1995()
         let sectors = try AstroCalculator.gauquelinSectors(
             for: fixture.moment,

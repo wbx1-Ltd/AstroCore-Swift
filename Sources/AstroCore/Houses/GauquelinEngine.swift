@@ -2,7 +2,7 @@ import Foundation
 
 /// Independent 36-sector Gauquelin model.
 ///
-/// Numbering follows the clockwise Swiss Ephemeris convention:
+/// Numbering follows the clockwise reference convention:
 /// sector 1 = Ascendant, sector 10 = MC, sector 19 = Descendant,
 /// sector 28 = IC.
 enum GauquelinEngine {

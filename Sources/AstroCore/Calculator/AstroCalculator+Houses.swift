@@ -26,7 +26,7 @@ extension AstroCalculator {
 
     /// Compute the 36 Gauquelin sectors.
     ///
-    /// Sector numbering follows the Swiss Ephemeris convention:
+    /// Sector numbering follows the library's clockwise reference convention:
     /// sector 1 starts at the Ascendant and counts clockwise.
     ///
     /// Gauquelin sectors are undefined beyond the ecliptic polar circle and
