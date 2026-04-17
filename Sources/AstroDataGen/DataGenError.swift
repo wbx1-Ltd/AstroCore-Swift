@@ -5,6 +5,7 @@ enum DataGenError: Error, CustomStringConvertible {
     case unzipFailed(file: URL)
     case parseFailed(detail: String)
     case invalidData(detail: String)
+    case unsupportedPlatform(detail: String)
     case packageRootNotFound
 
     var description: String {
@@ -13,6 +14,7 @@ enum DataGenError: Error, CustomStringConvertible {
         case .unzipFailed(let file): "Unzip failed: \(file)"
         case .parseFailed(let detail): "Parse failed: \(detail)"
         case .invalidData(let detail): "Invalid data: \(detail)"
+        case .unsupportedPlatform(let detail): "Unsupported platform: \(detail)"
         case .packageRootNotFound: "Could not find Package.swift in parent directories"
         }
     }
